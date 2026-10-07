@@ -4,20 +4,24 @@ namespace Dloizides.Testing.Report;
 
 internal sealed class RunPage
 {
-    private const int SearchMessageLength = 300;
+    private const string NotBuiltYet = "Not built yet";
+    private const string TestsSuffix = "Tests";
     private const int SummaryMessageLength = 240;
     private const string SearchBox =
-        "<div class=\"search\"><input id=\"q\" type=\"search\" placeholder=\"Filter by test, feature or error text\" aria-label=\"Filter tests\"><output id=\"qn\" for=\"q\"></output></div>";
+        "<div class=\"search\"><input id=\"q\" type=\"search\" placeholder=\"Type words, e.g. returns 404\" aria-label=\"Filter tests\"><output id=\"qn\" for=\"q\"></output><p id=\"qz\" class=\"none\" hidden></p></div>";
     private const string TableHead =
         "<thead><tr><th>Scenario</th><th>Expected</th><th>Outcome</th><th class=\"num\">Time</th></tr></thead>";
 
     private static readonly StringComparer Ordering = StringComparer.OrdinalIgnoreCase;
 
+    private readonly SetLabels labels;
     private readonly List<(string Id, string Name)> problems = [];
     private int testCounter;
     private int groupCounter;
 
-    public static string Render(TestRun run, string title) => new RunPage().Build(run, title);
+    private RunPage(SetLabels labels) => this.labels = labels;
+
+    public static string Render(TestRun run, string title, SetLabels labels) => new RunPage(labels).Build(run, title);
 
     private static string E(string text) => Html.Encode(text);
 
@@ -50,7 +54,7 @@ internal sealed class RunPage
         return $"<p class=\"headline\">Nothing failed unexpectedly.{E(amberText)}</p>";
     }
 
-    private static string SetList(TestRun run)
+    private string SetList(TestRun run)
     {
         var builder = new StringBuilder("<ul class=\"sets\">");
         foreach (var set in run.Sets)
@@ -58,7 +62,7 @@ internal sealed class RunPage
             var verdict = Verdict.For(set);
             var tally = new Tally(set.Tests);
             var links = string.Join("<br>", set.Files.Select(FileLinks));
-            builder.Append($"<li class=\"set {verdict.Tone}\"><span class=\"set-name\">{E(set.Name)}</span><span class=\"set-verdict\">{E(verdict.Text)}</span>")
+            builder.Append($"<li class=\"set {verdict.Tone}\"><span class=\"set-name\">{E(set.Name)}</span><span class=\"set-verdict\">{E(verdict.Text)}</span>{labels.Span(set.Name, "set-label")}")
                 .Append($"{Html.TallyBar(tally, string.Empty)}<span class=\"counts\">{E(tally.Text())}</span><span class=\"files\">{links}</span></li>");
         }
 
@@ -67,13 +71,18 @@ internal sealed class RunPage
 
     private static string FileLinks(SetFile file)
     {
-        var log = file.Log.Length > 0 ? $" <a href=\"{E(file.Log)}\">log</a>" : string.Empty;
-        return $"{E(file.Project)}: <a href=\"{E(file.Trx)}\">trx</a>{log}";
+        var log = file.Log.Length > 0 ? $" <a href=\"{E(file.Log)}\">run log</a>" : string.Empty;
+        return $"{E(ProjectLabel(file.Project))}: <a href=\"{E(file.Trx)}\">raw results</a>{log}";
     }
+
+    private static string ProjectLabel(string project) =>
+        project.Length > TestsSuffix.Length && project.EndsWith(TestsSuffix, StringComparison.Ordinal)
+            ? project[..^TestsSuffix.Length].TrimEnd('.')
+            : project;
 
     private string Section(TestSet set)
     {
-        var builder = new StringBuilder($"<section class=\"setd\"><h2>{E(set.Name)}<small>{E(new Tally(set.Tests).Text())}</small></h2>");
+        var builder = new StringBuilder($"<section class=\"setd\"><h2>{E(set.Name)}<small>{E(new Tally(set.Tests).Text())}</small></h2>{labels.Span(set.Name, "setnote")}");
         var multiProject = set.Files.Select(f => f.Project).Distinct(StringComparer.Ordinal).Count() > 1;
         var features = set.Tests
             .GroupBy(t => $"{t.Project}|{t.Feature}")
@@ -89,7 +98,7 @@ internal sealed class RunPage
         var first = tests[0];
         var tally = new Tally(tests);
         var open = tally[TestStatus.Fail] + tally[TestStatus.XPass] > 0 ? " open" : string.Empty;
-        var projectTag = multiProject ? $"<span class=\"proj\">{E(first.Project)}</span>" : string.Empty;
+        var projectTag = multiProject ? $"<span class=\"proj\">{E(ProjectLabel(first.Project))}</span>" : string.Empty;
         var rows = MethodRows(tests);
         return $"<details class=\"feat\"{open}><summary><span class=\"fname\">{E(first.Feature)}</span>{projectTag}"
             + $"<span class=\"fcount\">{E(tally.Text())}</span>{Html.TallyBar(tally, "small")}</summary>"
@@ -127,8 +136,7 @@ internal sealed class RunPage
         var id = $"t-{testCounter}";
         if (test.Status is TestStatus.Fail or TestStatus.XPass)
             problems.Add((id, test.Name));
-        var message = test.Message.Length > SearchMessageLength ? test.Message[..SearchMessageLength] : test.Message;
-        var search = E($"{test.Name} {test.Feature} {test.Description} {StatusText.Label(test.Status)} {message}".ToLowerInvariant());
+        var search = E(SearchText.Build(test));
         var args = test.Args.Length > 0 ? $"<code class=\"args\">{E(test.Args)}</code>" : string.Empty;
         var scenario = test.Scenario.Length > 0 ? E(test.Scenario) : "<span class=\"empty\">any input</span>";
         var css = StatusText.Css(test.Status);
@@ -143,12 +151,12 @@ internal sealed class RunPage
         if (test.Status == TestStatus.Skip)
         {
             var reason = test.Message.Length > 0 ? test.Message : "no reason given";
-            return $"<tr class=\"note\"><td colspan=\"4\"><span class=\"why\">Skipped:</span> {E(reason)}</td></tr>";
+            return $"<tr class=\"note\"><td colspan=\"4\"><span class=\"why\">Skipped (known product bug):</span> {E(reason)}</td></tr>";
         }
 
         if (test.Message.Length == 0 && test.Stack.Length == 0)
             return string.Empty;
-        var first = test.Message.Split('\n')[0];
+        var first = test.Status == TestStatus.XFail ? NotBuiltYet : test.Message.Split('\n')[0];
         if (first.Length > SummaryMessageLength)
             first = first[..SummaryMessageLength] + "...";
         var full = string.Join("\n\n", new[] { test.Message, test.Stack }.Where(p => p.Length > 0));

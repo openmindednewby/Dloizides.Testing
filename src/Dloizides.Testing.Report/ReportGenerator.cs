@@ -13,14 +13,14 @@ internal static class ReportGenerator
         var reports = Path.GetDirectoryName(runPath) ?? runPath;
         var run = reader.Read(runPath);
         var runIndex = Path.Combine(runPath, "index.html");
-        File.WriteAllText(runIndex, RunPage.Render(run, options.RunTitle), Utf8NoBom);
+        File.WriteAllText(runIndex, RunPage.Render(run, options.RunTitle, options.Labels), Utf8NoBom);
 
         var runs = Directory.GetDirectories(reports)
             .Where(d => RunDates.Parse(Path.GetFileName(d)) is not null)
             .Select(d => string.Equals(Path.GetFullPath(d), runPath, StringComparison.OrdinalIgnoreCase) ? run : reader.Read(d))
             .OrderByDescending(r => r.Date)
             .ToList();
-        File.WriteAllText(Path.Combine(reports, "index.html"), IndexPage.Render(runs, options.IndexTitle), Utf8NoBom);
+        File.WriteAllText(Path.Combine(reports, "index.html"), IndexPage.Render(runs, options.IndexTitle, options.Labels), Utf8NoBom);
         if (runs.Count > 0)
             File.WriteAllText(Path.Combine(reports, "latest.html"), IndexPage.Latest(runs[0].Name, options.RunTitle), Utf8NoBom);
         return runIndex;
@@ -31,14 +31,14 @@ internal static class IndexPage
 {
     private const string Head = "<table class=\"runs\"><thead><tr><th>Run</th><th>Sets</th><th class=\"num\">Took</th></tr></thead><tbody>";
 
-    public static string Render(IReadOnlyList<TestRun> runs, string title)
+    public static string Render(IReadOnlyList<TestRun> runs, string title, SetLabels labels)
     {
         var body = new StringBuilder($"<h1>{Html.Encode(title)}</h1>");
-        var latestLink = runs.Count > 0 ? " <a href=\"latest.html\">Open the latest run</a>." : string.Empty;
+        var latestLink = runs.Count > 0 ? " <a class=\"latest\" href=\"latest.html\">Open the latest run</a>." : string.Empty;
         body.Append($"<p class=\"when\">Newest first. Amber means a set marked expected-red failed as expected.{latestLink}</p>");
         body.Append(Head);
         foreach (var run in runs)
-            body.Append(Row(run));
+            body.Append(Row(run, labels));
         body.Append("</tbody></table>");
         return Html.Page(title, body.ToString(), false);
     }
@@ -50,12 +50,12 @@ internal static class IndexPage
             + $"<title>Latest run: {Html.Encode(runTitle)}</title></head><body><a href=\"{target}\">{Html.Encode(newest)}</a></body></html>";
     }
 
-    private static string Row(TestRun run)
+    private static string Row(TestRun run, SetLabels labels)
     {
         var badges = string.Concat(run.Sets.Select(set =>
         {
             var verdict = Verdict.For(set);
-            return $"<span class=\"badge {verdict.Tone}\"><b>{Html.Encode(set.Name)}</b> {Html.Encode(verdict.Short)}</span>";
+            return $"<span class=\"badge {verdict.Tone}\"><b>{Html.Encode(set.Name)}</b> {Html.Encode(verdict.Short)}{labels.Span(set.Name, "blabel")}</span>";
         }));
         var setsHtml = badges.Length > 0 ? $"<div class=\"badges\">{badges}</div>" : "<span class=\"empty\">No .trx results in this folder</span>";
         var took = run.Seconds > 0 ? Html.Duration(run.Seconds) : string.Empty;

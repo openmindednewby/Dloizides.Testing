@@ -5,8 +5,11 @@ internal sealed record ReportOptions(
     IReadOnlyList<string> SourceRoots,
     IReadOnlySet<string> ExpectedRedSets,
     IReadOnlyList<string> SetOrder,
-    string Name)
+    string Name,
+    IReadOnlyDictionary<string, string>? SetLabelOverrides = null)
 {
+    public SetLabels Labels => new(SetLabelOverrides ?? new Dictionary<string, string>());
+
     public string RunTitle => Name.Length > 0 ? $"{Name} tests" : "Tests";
 
     public string IndexTitle => Name.Length > 0 ? $"{Name} test runs" : "Test runs";
@@ -17,7 +20,7 @@ internal sealed record ParseResult(ReportOptions? Options, string Error, bool Is
 internal static class OptionsParser
 {
     public const string Usage =
-        "Usage: test-report <run-folder> [--source <dir>]... [--expected-red <set>[,<set>...]]... [--set-order <set>[,<set>...]] [--name <product>]";
+        "Usage: test-report <run-folder> [--source <dir>]... [--expected-red <set>[,<set>...]]... [--set-order <set>[,<set>...]] [--name <product>] [--set-label <Set>=<sentence>]...";
 
     public static ParseResult Parse(IReadOnlyList<string> args)
     {
@@ -26,6 +29,7 @@ internal static class OptionsParser
         var expectedRed = new HashSet<string>(StringComparer.Ordinal);
         var setOrder = new List<string>();
         var name = string.Empty;
+        var labels = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         for (var i = 0; i < args.Count; i++)
         {
             var arg = args[i];
@@ -48,13 +52,19 @@ internal static class OptionsParser
                 case "--expected-red": expectedRed.UnionWith(SplitList(value)); break;
                 case "--set-order": setOrder.AddRange(SplitList(value)); break;
                 case "--name": name = value.Trim(); break;
+                case "--set-label":
+                    var eq = value.IndexOf('=', StringComparison.Ordinal);
+                    if (eq <= 0)
+                        return Fail($"--set-label needs Name=Sentence, got \"{value}\".");
+                    labels[value[..eq].Trim()] = value[(eq + 1)..].Trim();
+                    break;
                 default: return Fail($"Unknown option \"{arg}\".");
             }
         }
 
         if (runFolder is null)
             return Fail("Missing <run-folder>.");
-        var options = new ReportOptions(Path.GetFullPath(runFolder), sources, expectedRed, setOrder, name);
+        var options = new ReportOptions(Path.GetFullPath(runFolder), sources, expectedRed, setOrder, name, labels);
         return new ParseResult(options, string.Empty, false);
     }
 
