@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework></TargetFramework>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Dloizides.Testing.Report</RootNamespace>
+    <PackageId>Dloizides.Testing.Report</PackageId>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>test-report</ToolCommandName>
+    <RollForward>Major</RollForward>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageTags>testing;trx;test-report;html;dotnet-tool;method-under-test</PackageTags>
+    <Description>dotnet tool test-report: turns the .trx files of a test run into a static HTML report (problems first, feature and method grouping, [MethodUnderTest] descriptions, search, light/dark) plus a runs index and latest.html.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\report.css" LogicalName="report.css" />
+    <EmbeddedResource Include="Assets\report.js" LogicalName="report.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Dloizides.Testing.Report.Tests" />
+  </ItemGroup>
+
+</Project>

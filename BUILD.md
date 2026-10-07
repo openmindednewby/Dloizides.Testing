@@ -8,8 +8,9 @@ dotnet test Dloizides.Testing.slnx -c Release      # needs Docker for the [Trait
 dotnet test Dloizides.Testing.slnx -c Release --filter "Category!=Docker"   # without Docker
 ```
 
-One repo, two packages: `src/Dloizides.Testing` (no dependencies) and `src/Dloizides.Testing.Postgres`
-(Npgsql, Testcontainers, xUnit v2), each with its own test project. Both share the `<Version>` in
+One repo, three packages: `src/Dloizides.Testing` (no dependencies), `src/Dloizides.Testing.Postgres`
+(Npgsql, Testcontainers, xUnit v2) and `src/Dloizides.Testing.Report` (dotnet tool `test-report`, no
+dependencies), each with its own test project. Both share the `<Version>` in
 `Directory.Build.props` and ship together.
 
 `tests/Dloizides.Testing.Tests.Samples` is a plain class library of deliberately broken and correct

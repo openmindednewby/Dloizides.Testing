@@ -1,6 +1,6 @@
 # Dloizides.Testing
 
-Shared test infrastructure for our .NET services. Two packages from this repo:
+Shared test infrastructure for our .NET services. Three packages from this repo (the third, `Dloizides.Testing.Report`, is the `test-report` dotnet tool described below):
 
 1. **`Dloizides.Testing`** (no package dependencies): **`[MethodUnderTest]` + `MethodUnderTestCoverage`** — every test-name prefix (`Save` in
    `Save_WhenNew_Persists`) gets a one-sentence business description on its test class. The test
@@ -87,6 +87,31 @@ public sealed class Postgres16Fixture() : PostgresContainerFixture("postgres:16-
 
 `ConnectionString` throws `InvalidOperationException` before `InitializeAsync` has run. v0.1 has no
 EF Core or Respawn coupling: run your migrations and resets on top of `ConnectionString`.
+
+## HTML test report (`Dloizides.Testing.Report`, dotnet tool `test-report`)
+
+```bash
+dotnet tool install --global Dloizides.Testing.Report
+dotnet test --results-directory reports/20261007-100000/Unit-Shop.Tests --logger "trx;LogFileName=results.trx"
+test-report reports/20261007-100000 --source tests --name Shop
+```
+
+Reads every `<Set>-<Project>.trx` (or `<Set>-<Project>/*.trx`) in the run folder and writes
+`<run>/index.html`, plus `index.html` (all runs, newest first) and `latest.html` in the parent folder.
+Run folders are named `yyyyMMdd-HHmmss` or `yyyy-MM-ddTHH-mm-ss`. Problems come first: unexpected
+failures and early passes are listed at the top and their features open; tests group by feature, then
+by method, with the `[MethodUnderTest]` description read from the `--source` folders. Light/dark,
+search box, usable at 360 px.
+
+| Option | Meaning |
+|---|---|
+| `--source <dir>` | folder of test `.cs` files to read descriptions from (repeatable; `bin/` and `obj/` skipped) |
+| `--expected-red <set>[,<set>]` | sets whose failures are expected (amber); a pass there is reported as "passed early" (red) |
+| `--set-order <set>[,<set>]` | display order of sets; unlisted sets follow alphabetically |
+| `--name <product>` | page titles become `<product> tests` / `<product> test runs` |
+
+An optional `summary.json` in the run folder (`{"Set": "...", "Rows": [{"Base": "<Set>-<Project>"}]}`)
+lists the projects that were expected to run; one without a `.trx` turns its set red.
 
 ## License
 
