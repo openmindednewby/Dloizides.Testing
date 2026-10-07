@@ -19,7 +19,7 @@ internal sealed class RunReader(ReportOptions options, IReadOnlyDictionary<strin
 
     public TestRun Read(string folder)
     {
-        var sets = new Dictionary<string, TestSet>(StringComparer.Ordinal);
+        var sets = new Dictionary<string, TestSet>(StringComparer.OrdinalIgnoreCase);
         DateTimeOffset? start = null;
         DateTimeOffset? finish = null;
         foreach (var file in FindTrxFiles(folder))
@@ -61,7 +61,7 @@ internal sealed class RunReader(ReportOptions options, IReadOnlyDictionary<strin
     {
         if (!sets.TryGetValue(name, out var set))
         {
-            set = new TestSet(name, options.ExpectedRedSets.Contains(name));
+            set = new TestSet(name, options.ExpectedRedSets.Contains(name, StringComparer.OrdinalIgnoreCase));
             sets[name] = set;
         }
 
@@ -105,7 +105,7 @@ internal sealed class RunReader(ReportOptions options, IReadOnlyDictionary<strin
 
     private int OrderOf(string setName)
     {
-        var index = options.SetOrder.ToList().IndexOf(setName);
+        var index = options.SetOrder.ToList().FindIndex(name => string.Equals(name, setName, StringComparison.OrdinalIgnoreCase));
         return index < 0 ? UnorderedSet : index;
     }
 }
