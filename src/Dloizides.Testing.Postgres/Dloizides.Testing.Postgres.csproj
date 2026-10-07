@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework></TargetFramework>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <RootNamespace>Dloizides.Testing.Postgres</RootNamespace>
+    <PackageId>Dloizides.Testing.Postgres</PackageId>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageTags>testing;xunit;testcontainers;postgresql;saas</PackageTags>
+    <Description>A PostgreSQL Testcontainers fixture for xUnit v2 whose connect and command timeouts survive Docker Desktop port-forward stalls.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql" Version="8.0.7" />
+    <PackageReference Include="Testcontainers.PostgreSql" Version="4.15.0" />
+    <PackageReference Include="xunit.extensibility.core" Version="2.9.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Dloizides.Testing.Postgres.Tests" />
+  </ItemGroup>
+
+</Project>

@@ -13,7 +13,7 @@ public class MethodUnderTestCoverageTests
     [Fact]
     public void Missing_WhenPrefixHasNoAttribute_ReportsClassAndPrefix()
     {
-        const string expected = "UndescribedSample: Save";
+        const string expected = "Dloizides.Testing.Tests.Samples.UndescribedSample: Save";
 
         var missing = MethodUnderTestCoverage.Missing(Samples);
 
@@ -23,7 +23,7 @@ public class MethodUnderTestCoverageTests
     [Fact]
     public void Missing_WhenEveryPrefixIsDescribed_ReportsNothingForThatClass()
     {
-        string[] describedClasses = ["DescribedSample:", "TwoDescriptionsSample:"];
+        string[] describedClasses = ["Dloizides.Testing.Tests.Samples.DescribedSample:", "Dloizides.Testing.Tests.Samples.TwoDescriptionsSample:"];
 
         var missing = MethodUnderTestCoverage.Missing(Samples);
 
@@ -33,7 +33,7 @@ public class MethodUnderTestCoverageTests
     [Fact]
     public void Missing_WithTheoryMethod_TreatsItAsATest()
     {
-        const string expected = "TheorySample: Parse";
+        const string expected = "Dloizides.Testing.Tests.Samples.TheorySample: Parse";
 
         var missing = MethodUnderTestCoverage.Missing(Samples);
 
@@ -43,7 +43,7 @@ public class MethodUnderTestCoverageTests
     [Fact]
     public void Missing_WithFactSubclass_TreatsItAsATest()
     {
-        const string expected = "CustomFactSample: Fetch";
+        const string expected = "Dloizides.Testing.Tests.Samples.CustomFactSample: Fetch";
 
         var missing = MethodUnderTestCoverage.Missing(Samples);
 
@@ -53,7 +53,7 @@ public class MethodUnderTestCoverageTests
     [Fact]
     public void Missing_WithNonXunitAttributeNamedFact_TreatsItAsATest()
     {
-        const string expected = "NameOnlyFactSample: Count";
+        const string expected = "Dloizides.Testing.Tests.Samples.NameOnlyFactSample: Count";
 
         var missing = MethodUnderTestCoverage.Missing(Samples);
 
@@ -61,9 +61,39 @@ public class MethodUnderTestCoverageTests
     }
 
     [Fact]
+    public void Missing_WithStaticFactMethod_TreatsItAsATest()
+    {
+        const string expected = "Dloizides.Testing.Tests.Samples.StaticFactSample: Compute";
+
+        var missing = MethodUnderTestCoverage.Missing(Samples);
+
+        missing.ShouldContain(expected);
+    }
+
+    [Fact]
+    public void Missing_WhenBaseClassDescribesInheritedTest_ReportsNothingForDerivedClass()
+    {
+        const string derivedClass = "Dloizides.Testing.Tests.Samples.InheritedDescriptionSample:";
+
+        var missing = MethodUnderTestCoverage.Missing(Samples);
+
+        missing.ShouldNotContain(entry => entry.StartsWith(derivedClass, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Invalid_WhenBaseClassDescribesInheritedTest_ReportsNothingForDerivedClass()
+    {
+        const string derivedClass = "Dloizides.Testing.Tests.Samples.InheritedDescriptionSample:";
+
+        var invalid = MethodUnderTestCoverage.Invalid(Samples);
+
+        invalid.ShouldNotContain(entry => entry.StartsWith(derivedClass, StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Missing_WithAbstractClass_SkipsIt()
     {
-        const string abstractClass = "AbstractSample:";
+        const string abstractClass = "Dloizides.Testing.Tests.Samples.AbstractSample:";
 
         var missing = MethodUnderTestCoverage.Missing(Samples);
 
@@ -75,11 +105,12 @@ public class MethodUnderTestCoverageTests
     {
         string[] expected =
         [
-            "CustomFactSample: Fetch",
-            "NameOnlyFactSample: Count",
-            "StaleDescriptionSample: Archive",
-            "TheorySample: Parse",
-            "UndescribedSample: Save",
+            "Dloizides.Testing.Tests.Samples.CustomFactSample: Fetch",
+            "Dloizides.Testing.Tests.Samples.NameOnlyFactSample: Count",
+            "Dloizides.Testing.Tests.Samples.StaleDescriptionSample: Archive",
+            "Dloizides.Testing.Tests.Samples.StaticFactSample: Compute",
+            "Dloizides.Testing.Tests.Samples.TheorySample: Parse",
+            "Dloizides.Testing.Tests.Samples.UndescribedSample: Save",
         ];
 
         var missing = MethodUnderTestCoverage.Missing(Samples);
@@ -100,7 +131,7 @@ public class MethodUnderTestCoverageTests
     [Fact]
     public void Invalid_WhenDescriptionNamesNoTestedMethod_ReportsIt()
     {
-        const string expected = "StaleDescriptionSample: Delete";
+        const string expected = "Dloizides.Testing.Tests.Samples.StaleDescriptionSample: Delete";
 
         var invalid = MethodUnderTestCoverage.Invalid(Samples);
 
@@ -110,7 +141,7 @@ public class MethodUnderTestCoverageTests
     [Fact]
     public void Invalid_WhenDescriptionIsShorterThanDefaultMinimum_ReportsIt()
     {
-        const string expected = "ShortDescriptionSample: Merge";
+        const string expected = "Dloizides.Testing.Tests.Samples.ShortDescriptionSample: Merge";
 
         var invalid = MethodUnderTestCoverage.Invalid(Samples);
 
@@ -121,7 +152,7 @@ public class MethodUnderTestCoverageTests
     public void Invalid_WithMinimumBelowDescriptionLength_AcceptsShortDescription()
     {
         const int minLength = 5;
-        const string shortDescription = "ShortDescriptionSample: Merge";
+        const string shortDescription = "Dloizides.Testing.Tests.Samples.ShortDescriptionSample: Merge";
 
         var invalid = MethodUnderTestCoverage.Invalid(Samples, minLength);
 
@@ -131,7 +162,7 @@ public class MethodUnderTestCoverageTests
     [Fact]
     public void Invalid_WithSampleAssembly_ReturnsExactlyTheBrokenDescriptionsInOrder()
     {
-        string[] expected = ["ShortDescriptionSample: Merge", "StaleDescriptionSample: Delete"];
+        string[] expected = ["Dloizides.Testing.Tests.Samples.ShortDescriptionSample: Merge", "Dloizides.Testing.Tests.Samples.StaleDescriptionSample: Delete"];
 
         var invalid = MethodUnderTestCoverage.Invalid(Samples);
 

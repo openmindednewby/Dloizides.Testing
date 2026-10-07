@@ -94,3 +94,22 @@ public class TwoDescriptionsSample
     {
     }
 }
+
+[MethodUnderTest("Reset", "Clears every cached value so the next read goes to the store.")]
+public abstract class DescribedBaseSample
+{
+    [Fact]
+    public void Reset_WhenCalled_ClearsCache()
+    {
+    }
+}
+
+public class InheritedDescriptionSample : DescribedBaseSample;
+
+public static class StaticFactSample
+{
+    [Fact]
+    public static void Compute_WhenCalled_ReturnsTotal()
+    {
+    }
+}

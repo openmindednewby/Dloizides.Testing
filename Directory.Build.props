@@ -13,9 +13,7 @@
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <PackageTags>testing;xunit;testcontainers;postgresql;test-report;method-under-test;saas</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <Description>Shared test infrastructure: a [MethodUnderTest] attribute plus a two-line guard that fails the build when a test-name prefix has no business description, and a PostgreSQL Testcontainers fixture whose timeouts survive Docker Desktop port-forward stalls.</Description>
 
     <Version>0.1.0</Version>
     <AssemblyVersion>0.1.0.0</AssemblyVersion>

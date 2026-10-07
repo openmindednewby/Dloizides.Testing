@@ -1,8 +1,10 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Dloizides.Testing/Dloizides.Testing.csproj" />
+    <Project Path="src/Dloizides.Testing.Postgres/Dloizides.Testing.Postgres.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Dloizides.Testing.Postgres.Tests/Dloizides.Testing.Postgres.Tests.csproj" />
     <Project Path="tests/Dloizides.Testing.Tests/Dloizides.Testing.Tests.csproj" />
     <Project Path="tests/Dloizides.Testing.Tests.Samples/Dloizides.Testing.Tests.Samples.csproj" />
   </Folder>

@@ -85,33 +85,23 @@ function Set-VersionInPropsFile {
   Set-Content -Path $PropsPath -Value $text -Encoding utf8
 }
 
-function Get-PackageIdFromPropsFile {
-  param([Parameter(Mandatory = $true)][string]$PropsPath)
+function Get-PackageIdsFromSrc {
+  param([Parameter(Mandatory = $true)][string]$RepoRoot)
 
-  # Check Directory.Build.props first
-  $text = Get-Content -Path $PropsPath -Raw
-  $match = [regex]::Match($text, "<PackageId>(?<id>[^<]+)</PackageId>")
-  if ($match.Success) {
-    return $match.Groups["id"].Value.Trim()
-  }
-
-  # Check .csproj files in src directory
-  $repoRoot = Split-Path -Parent $PropsPath
-  $srcPath = Join-Path $repoRoot "src"
-  if (Test-Path $srcPath) {
-    $csprojFiles = @(Get-ChildItem -Path $srcPath -Recurse -Filter "*.csproj" -File -ErrorAction SilentlyContinue)
-    foreach ($csproj in $csprojFiles) {
-      $csprojText = Get-Content -Path $csproj.FullName -Raw
-      $csprojMatch = [regex]::Match($csprojText, "<PackageId>(?<id>[^<]+)</PackageId>")
-      if ($csprojMatch.Success) {
-        return $csprojMatch.Groups["id"].Value.Trim()
-      }
+  $srcPath = Join-Path $RepoRoot "src"
+  $ids = @(
+    Get-ChildItem -Path $srcPath -Recurse -Filter "*.csproj" -File -ErrorAction SilentlyContinue |
+    Where-Object { $_.FullName -notmatch "\\(bin|obj)\\" } |
+    ForEach-Object {
+      $csprojMatch = [regex]::Match((Get-Content -Path $_.FullName -Raw), "<PackageId>(?<id>[^<]+)</PackageId>")
+      if ($csprojMatch.Success) { $csprojMatch.Groups["id"].Value.Trim() }
     }
+  )
+  if ($ids.Count -eq 0) {
+    throw "No <PackageId> found under $srcPath"
   }
 
-  # If no PackageId is specified, derive from directory name
-  $dirName = Split-Path -Leaf $repoRoot
-  return $dirName
+  return $ids
 }
 
 # Main script
@@ -125,7 +115,8 @@ if (-not $Bump -and -not $NoBump) {
   throw "Specify -Bump <patch|minor|major> to bump+publish, or -NoBump to publish the current version."
 }
 
-$packageId = Get-PackageIdFromPropsFile -PropsPath $propsPath
+$packageIds = @(Get-PackageIdsFromSrc -RepoRoot $repoRoot)
+$packageId = $packageIds -join " + "
 $currentVersion = Get-VersionFromPropsFile -PropsPath $propsPath
 
 # Resolve the API key: explicit -ApiKey wins, else read NUGET_API_KEY from SaaS/.env.local.
@@ -171,7 +162,7 @@ if (-not $NoBump) {
 
 try {
   # Find solution or project file
-  $slnFiles = @(Get-ChildItem -Path $repoRoot -Filter "*.sln" -File -ErrorAction SilentlyContinue)
+  $slnFiles = @(Get-ChildItem -Path $repoRoot -Filter "*.sln*" -File -ErrorAction SilentlyContinue)
   if ($slnFiles.Count -eq 1) {
     $packTarget = $slnFiles[0].FullName
   } else {
@@ -226,21 +217,23 @@ try {
   # Step 4: Push
   Write-Host ""
   Write-Host "Step 4: Pushing version $targetVersion to NuGet.org..." -ForegroundColor Yellow
-  $nupkgPath = Join-Path $artifactsDir "$packageId.$targetVersion.nupkg"
-
-  if (-not (Test-Path $nupkgPath)) {
-    throw "Package not found: $nupkgPath"
+  $nupkgPaths = @($packageIds | ForEach-Object { Join-Path $artifactsDir "$_.$targetVersion.nupkg" })
+  foreach ($nupkgPath in $nupkgPaths) {
+    if (-not (Test-Path $nupkgPath)) {
+      throw "Package not found: $nupkgPath"
+    }
   }
 
-  dotnet nuget push $nupkgPath --api-key $ApiKey --source "https://api.nuget.org/v3/index.json" --skip-duplicate
-
-  if ($LASTEXITCODE -eq 0) {
-    Write-Host ""
-    Write-Host "Successfully published $packageId $targetVersion to NuGet.org!" -ForegroundColor Green
-  } else {
-    $exitCode = $LASTEXITCODE
-    throw "Failed to push package (exit code: $exitCode)"
+  foreach ($nupkgPath in $nupkgPaths) {
+    dotnet nuget push $nupkgPath --api-key $ApiKey --source "https://api.nuget.org/v3/index.json" --skip-duplicate
+    if ($LASTEXITCODE -ne 0) {
+      $exitCode = $LASTEXITCODE
+      throw "Failed to push $nupkgPath (exit code: $exitCode)"
+    }
   }
+
+  Write-Host ""
+  Write-Host "Successfully published $packageId $targetVersion to NuGet.org!" -ForegroundColor Green
 }
 catch {
   if (-not $NoBump) {

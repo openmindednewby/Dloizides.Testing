@@ -5,16 +5,9 @@
     <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
     <RootNamespace>Dloizides.Testing</RootNamespace>
     <PackageId>Dloizides.Testing</PackageId>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageTags>testing;xunit;test-report;method-under-test;saas</PackageTags>
+    <Description>A [MethodUnderTest] attribute plus a two-line guard that fails the build when a test-name prefix has no business description. No package dependencies.</Description>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Npgsql" Version="8.0.7" />
-    <PackageReference Include="Testcontainers.PostgreSql" Version="4.15.0" />
-    <PackageReference Include="xunit.extensibility.core" Version="2.9.3" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <InternalsVisibleTo Include="Dloizides.Testing.Tests" />
-  </ItemGroup>
 
 </Project>

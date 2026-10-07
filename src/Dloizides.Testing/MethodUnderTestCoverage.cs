@@ -5,11 +5,13 @@ namespace Dloizides.Testing;
 /// <summary>Lists test-name prefixes with no MethodUnderTest description, and descriptions that explain nothing.</summary>
 public static class MethodUnderTestCoverage
 {
+    /// <summary>The shortest description <see cref="Invalid"/> accepts by default.</summary>
     public const int DefaultMinimumDescriptionLength = 20;
 
     private const string FactAttributeName = "FactAttribute";
     private const char NameSeparator = '_';
 
+    /// <summary>Returns "FullClassName: Prefix" for every test-name prefix its class does not describe.</summary>
     public static IReadOnlyList<string> Missing(Assembly assembly)
     {
         ArgumentNullException.ThrowIfNull(assembly);
@@ -22,6 +24,7 @@ public static class MethodUnderTestCoverage
             .ToList();
     }
 
+    /// <summary>Returns "FullClassName: Method" for every description naming no tested method or shorter than minLength.</summary>
     public static IReadOnlyList<string> Invalid(Assembly assembly, int minLength = DefaultMinimumDescriptionLength)
     {
         ArgumentNullException.ThrowIfNull(assembly);
@@ -44,10 +47,12 @@ public static class MethodUnderTestCoverage
         });
     }
 
-    private static string Entry(Type type, string method) => $"{type.Name}: {method}";
+    private static string Entry(Type type, string method) => $"{type.FullName}: {method}";
 
     private static IEnumerable<Type> TestClasses(Assembly assembly) =>
-        LoadableTypes(assembly).Where(type => type is { IsClass: true, IsAbstract: false } && TestMethods(type).Any());
+        LoadableTypes(assembly).Where(type => IsConcreteOrStaticClass(type) && TestMethods(type).Any());
+
+    private static bool IsConcreteOrStaticClass(Type type) => type.IsClass && (!type.IsAbstract || type.IsSealed);
 
     private static IEnumerable<Type> LoadableTypes(Assembly assembly)
     {
@@ -62,7 +67,7 @@ public static class MethodUnderTestCoverage
     }
 
     private static IEnumerable<MethodInfo> TestMethods(Type type) =>
-        type.GetMethods(BindingFlags.Public | BindingFlags.Instance).Where(IsFact);
+        type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static).Where(IsFact);
 
     private static bool IsFact(MethodInfo method) =>
         method.GetCustomAttributes(inherit: true).Any(attribute => IsFactAttributeType(attribute.GetType()));
@@ -80,5 +85,5 @@ public static class MethodUnderTestCoverage
         TestMethods(type).Select(method => method.Name.Split(NameSeparator)[0]).ToHashSet(StringComparer.Ordinal);
 
     private static IEnumerable<MethodUnderTestAttribute> Descriptions(Type type) =>
-        type.GetCustomAttributes<MethodUnderTestAttribute>(inherit: false);
+        type.GetCustomAttributes<MethodUnderTestAttribute>(inherit: true);
 }

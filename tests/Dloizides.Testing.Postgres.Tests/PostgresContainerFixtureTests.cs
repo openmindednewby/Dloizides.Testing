@@ -1,7 +1,7 @@
 using Npgsql;
 using Shouldly;
 
-namespace Dloizides.Testing.Tests;
+namespace Dloizides.Testing.Postgres.Tests;
 
 [MethodUnderTest("Image", "Starts the PostgreSQL image a service asks for, postgres:17 when it asks for none.")]
 [MethodUnderTest("ConnectionString", "Refuses to hand out a connection string before the container has started.")]

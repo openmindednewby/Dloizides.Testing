@@ -29,11 +29,12 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
+    <Using Include="Dloizides.Testing" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Dloizides.Testing\Dloizides.Testing.csproj" />
-    <ProjectReference Include="..\Dloizides.Testing.Tests.Samples\Dloizides.Testing.Tests.Samples.csproj" />
+    <ProjectReference Include="..\..\src\Dloizides.Testing.Postgres\Dloizides.Testing.Postgres.csproj" />
   </ItemGroup>
 
 </Project>

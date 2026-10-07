@@ -8,6 +8,10 @@ dotnet test Dloizides.Testing.slnx -c Release      # needs Docker for the [Trait
 dotnet test Dloizides.Testing.slnx -c Release --filter "Category!=Docker"   # without Docker
 ```
 
+One repo, two packages: `src/Dloizides.Testing` (no dependencies) and `src/Dloizides.Testing.Postgres`
+(Npgsql, Testcontainers, xUnit v2), each with its own test project. Both share the `<Version>` in
+`Directory.Build.props` and ship together.
+
 `tests/Dloizides.Testing.Tests.Samples` is a plain class library of deliberately broken and correct
 sample test classes. It is not a test project, so the runner never executes it; the unit tests point
 `MethodUnderTestCoverage` at it. The test project itself carries the two-line guard, and DLZ0004
@@ -17,7 +21,7 @@ sample test classes. It is not a test project, so the runner never executes it; 
 
 ```powershell
 cd NuGetPackages/Dloizides.Testing
-.\publish.ps1 -NoBump          # ship the <Version> in Directory.Build.props
+.\publish.ps1 -NoBump          # ship both packages at the <Version> in Directory.Build.props
 .\publish.ps1 -Bump minor      # or bump + ship
 ```
 

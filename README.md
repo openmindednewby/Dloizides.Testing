@@ -1,12 +1,12 @@
 # Dloizides.Testing
 
-Shared test infrastructure for our .NET services. Two pieces in v0.1:
+Shared test infrastructure for our .NET services. Two packages from this repo:
 
-1. **`[MethodUnderTest]` + `MethodUnderTestCoverage`** — every test-name prefix (`Save` in
+1. **`Dloizides.Testing`** (no package dependencies): **`[MethodUnderTest]` + `MethodUnderTestCoverage`** — every test-name prefix (`Save` in
    `Save_WhenNew_Persists`) gets a one-sentence business description on its test class. The test
    report shows that sentence next to the results, and a two-line guard fails the build when a
    prefix has none or a description has gone stale.
-2. **`PostgresContainerFixture`** — a throwaway PostgreSQL Testcontainer (`postgres:17` by default)
+2. **`Dloizides.Testing.Postgres`**: **`PostgresContainerFixture`** — a throwaway PostgreSQL Testcontainer (`postgres:17` by default)
    whose connection string carries a 60 s connect and 120 s command timeout. Npgsql's defaults
    (15 s / 30 s) failed whole RENER Trading integration runs when Docker Desktop's port forward
    stalled for a few seconds; the longer timeouts made the same runs pass.
@@ -15,11 +15,13 @@ Shared test infrastructure for our .NET services. Two pieces in v0.1:
 
 ```bash
 dotnet add package Dloizides.Testing
+dotnet add package Dloizides.Testing.Postgres
 ```
 
-Targets `net8.0` and `net10.0`. The fixture implements xUnit **v2** `IAsyncLifetime`
-(`xunit.extensibility.core` 2.9.x). The coverage guard has no xUnit dependency: it finds tests by
-attribute type **name** (`FactAttribute` or any subclass, so `[Theory]` and custom facts count).
+Both target `net8.0` and `net10.0`. `Dloizides.Testing` has no dependencies: the guard finds tests
+by attribute type **name** (`FactAttribute` or any subclass, so `[Theory]` and custom facts count),
+instance or static. `Dloizides.Testing.Postgres` supports **xUnit v2 only**: the fixture implements
+v2 `IAsyncLifetime` (`xunit.extensibility.core` 2.9.x), which xUnit v3 replaced.
 
 ## Describe what each test class exercises
 
@@ -53,17 +55,19 @@ public class MethodUnderTestGuardTests
 }
 ```
 
-| Call | Reports (`"<Class>: <Method>"`, ordinal-sorted) |
+| Call | Reports (`"<Namespace.Class>: <Method>"`, ordinal-sorted) |
 |---|---|
 | `Missing(assembly)` | a test-name prefix whose class has no `[MethodUnderTest]` for it |
 | `Invalid(assembly, minLength = 20)` | a `[MethodUnderTest]` naming no tested method, or with a description shorter than `minLength` |
 
-Abstract classes and classes with no tests are skipped. Attributes are read from the class itself
-(`inherit: false`).
+Abstract classes and classes with no tests are skipped. Descriptions are inherited: a
+`[MethodUnderTest]` on a base class covers the tests a derived class inherits from it.
 
-## PostgreSQL fixture
+## PostgreSQL fixture (`Dloizides.Testing.Postgres`, xUnit v2 only)
 
 ```csharp
+using Dloizides.Testing.Postgres;
+
 public class OrdersRepositoryTests(PostgresContainerFixture db) : IClassFixture<PostgresContainerFixture>
 {
     [Fact]

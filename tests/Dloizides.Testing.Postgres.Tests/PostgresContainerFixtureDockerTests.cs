@@ -1,7 +1,7 @@
 using Npgsql;
 using Shouldly;
 
-namespace Dloizides.Testing.Tests;
+namespace Dloizides.Testing.Postgres.Tests;
 
 [MethodUnderTest("ConnectionString", "Connects to the started container and runs a query against the requested database.")]
 [Trait("Category", "Docker")]
