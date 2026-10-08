@@ -25,7 +25,7 @@ internal sealed class RunPage
     {
         var tests = run.Sets.SelectMany(s => s.Tests).ToList();
         var multiProject = tests.Select(t => t.Project).Distinct(StringComparer.Ordinal).Count() > 1;
-        var tree = new RunTree(diagrams.Flows);
+        var tree = new RunTree(diagrams);
         var treeHtml = tree.Render(tests, multiProject);
         var body = new StringBuilder("<a class=\"back\" href=\"../index.html\">All test runs</a>");
         body.Append($"<h1>{E(title)}</h1>");

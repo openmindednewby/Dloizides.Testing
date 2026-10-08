@@ -2,6 +2,13 @@ using System.Text;
 
 namespace Dloizides.Testing.Report;
 
+internal sealed record FigureSpec(string Caption, string Mermaid, string FileName)
+{
+    public string Id { get; init; } = string.Empty;
+
+    public string Links { get; init; } = string.Empty;
+}
+
 internal static class RunSections
 {
     public const string Toolbar =
@@ -23,13 +30,13 @@ internal static class RunSections
         {
             builder.Append("<section class=\"diagrams\" aria-labelledby=\"flows-h\"><h2 id=\"flows-h\">Flows</h2>");
             foreach (var flow in diagrams.Flows)
-                builder.Append(Figure(flow.Name, flow.Mermaid, flow.FileName));
+                builder.Append(Figure(new FigureSpec(flow.Name, flow.Mermaid, flow.FileName) { Id = flow.Anchor, Links = StepLinks(flow, thingId) }));
             builder.Append("</section>");
         }
 
         if (diagrams.Schema is { } schema)
             builder.Append("<section class=\"diagrams\" aria-labelledby=\"schema-h\"><h2 id=\"schema-h\">Database</h2>")
-                .Append(Figure("Tables from the EF model snapshot, coloured by the tests named after them", schema.Mermaid, SchemaResult.FileName))
+                .Append(Figure(new FigureSpec("Tables from the EF model snapshot, coloured by the tests named after them", schema.Mermaid, SchemaResult.FileName)))
                 .Append("</section>");
         return builder.ToString();
     }
@@ -47,10 +54,20 @@ internal static class RunSections
             builder.Append($"<li class=\"tone-{card.Class}\"><span class=\"rid\">{E(card.Id)}</span><span class=\"rt\">{E(title)}</span>{link}</li>");
         }
 
-        return builder.Append("</ol>").Append(Figure("Requirement, method under test, test", map.Mermaid, RequirementMapResult.FileName)).Append("</section>").ToString();
+        return builder.Append("</ol></section>").ToString();
     }
 
-    private static string Figure(string caption, string mermaid, string fileName) =>
-        $"<figure class=\"diagram\"><div class=\"scroll\"><div class=\"mermaid\">{E(mermaid)}</div></div><figcaption>{E(caption)} · "
-        + $"<a href=\"{E(RunDiagrams.PageOf(fileName))}\">Open full size</a> · <a href=\"{E(fileName)}\">{E(fileName)}</a></figcaption></figure>";
+    private static string StepLinks(FlowResult flow, Func<TestResult, string> thingId)
+    {
+        var links = flow.Steps.SelectMany(s => s.Tests.DistinctBy(MermaidText.MethodKey, StringComparer.Ordinal)
+            .Select(t => $"<li><a href=\"#{E(thingId(t))}\">Step {s.Step}: {E(MermaidText.MethodKey(t))}</a></li>"));
+        return $"<ol class=\"fsteps\">{string.Concat(links)}</ol>";
+    }
+
+    public static string Figure(FigureSpec spec)
+    {
+        var id = spec.Id.Length > 0 ? $" id=\"{E(spec.Id)}\"" : string.Empty;
+        return $"<figure class=\"diagram\"{id}><div class=\"scroll\"><div class=\"mermaid\">{E(spec.Mermaid)}</div></div>{spec.Links}<figcaption>{E(spec.Caption)} · "
+            + $"<a href=\"{E(RunDiagrams.PageOf(spec.FileName))}\">Open full size</a> · <a href=\"{E(spec.FileName)}\">{E(spec.FileName)}</a></figcaption></figure>";
+    }
 }

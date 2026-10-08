@@ -26,8 +26,8 @@ public sealed class ReportGeneratorTests : IDisposable
 
         html.ShouldSatisfyAllConditions(
             () => html.ShouldContain($"<ol class=\"attn\"><li><a href=\"#t-1\">{failing}</a></li></ol>"),
-            () => html.ShouldContain("<details class=\"area\" id=\"a-1-beta\"><summary>"),
-            () => html.ShouldNotContain("<details class=\"area\" open"),
+            () => html.ShouldContain("<details class=\"grp area\" id=\"a-1-beta\"><summary>"),
+            () => html.ShouldNotContain("<details class=\"grp area\" open"),
             () => html.IndexOf(">Beta<", StringComparison.Ordinal).ShouldBeLessThan(html.IndexOf(">Alpha<", StringComparison.Ordinal)));
     }
 
@@ -39,9 +39,8 @@ public sealed class ReportGeneratorTests : IDisposable
         var html = File.ReadAllText(ReportGenerator.Generate(Options(run)).RunPage);
 
         html.ShouldSatisfyAllConditions(
-            () => html.ShouldContain("<span class=\"aname\">Battery</span>"),
-            () => html.ShouldContain("<span class=\"tname\">BatteryEndpoint</span><span class=\"type\">Endpoint</span>"),
-            () => html.ShouldContain("<details class=\"method\"><summary><span class=\"tw\"></span><span class=\"mname\">Load</span>"));
+            () => html.ShouldContain("<span class=\"gname\">Battery<span class=\"sep\"> › </span>BatteryEndpoint<span class=\"type\">Endpoint</span>"),
+            () => html.ShouldContain("<span class=\"sep\"> › </span><span class=\"mname\">Load</span></span>"));
     }
 
     [Fact]
@@ -87,7 +86,7 @@ public sealed class ReportGeneratorTests : IDisposable
 
         html.ShouldSatisfyAllConditions(
             () => html.ShouldContain("Feeds:&nbsp;<a href=\"#c-shop-tests-parsertests\">Parser &#9656;</a>"),
-            () => html.ShouldContain("<b>Import: step 1 of 2</b>"),
+            () => html.ShouldContain("Part of: <a href=\"#f-import\">Import</a>, step 1 of 2"),
             () => html.ShouldContain("<div class=\"mermaid\">flowchart LR"),
             () => html.ShouldContain("<a href=\"flow-import.html\">Open full size</a>"),
             () => File.ReadAllText(Path.Combine(run, "flow-import.mmd")).ShouldContain("s1 --> s2"));

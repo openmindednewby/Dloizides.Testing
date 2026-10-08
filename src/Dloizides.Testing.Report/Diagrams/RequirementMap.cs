@@ -6,8 +6,6 @@ internal sealed record RequirementCard(int Index, string Id, string Title, strin
 
 internal sealed record RequirementMapResult(string Mermaid, IReadOnlyList<RequirementCard> Cards)
 {
-    public const string FileName = "requirements.mmd";
-
     public int Undeclared => Cards.Count(c => !c.Declared);
 
     public string Header
@@ -24,6 +22,11 @@ internal sealed record RequirementMapResult(string Mermaid, IReadOnlyList<Requir
             return string.Join(" · ", parts);
         }
     }
+}
+
+internal sealed record ClassMap(string Id, RequirementMapResult Map)
+{
+    public string FileName => $"requirements-{Id}.mmd";
 }
 
 internal sealed record NodeRegistry(Dictionary<string, string> Ids, StringBuilder Builder);

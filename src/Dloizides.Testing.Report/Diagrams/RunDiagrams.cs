@@ -13,14 +13,18 @@ internal sealed record RunDiagrams(RequirementMapResult? Requirements, IReadOnly
 
     public static readonly RunDiagrams None = new(null, [], null);
 
+    public IReadOnlyList<ClassMap> ClassMaps { get; init; } = [];
+
+    public IReadOnlySet<string> SchemaClasses { get; init; } = new HashSet<string>(StringComparer.Ordinal);
+
     public bool Any => Requirements is not null || Flows.Count > 0 || Schema is not null;
 
     public IEnumerable<(string FileName, string Mermaid)> Files
     {
         get
         {
-            if (Requirements is not null)
-                yield return (RequirementMapResult.FileName, Requirements.Mermaid);
+            foreach (var map in ClassMaps)
+                yield return (map.FileName, map.Map.Mermaid);
             foreach (var flow in Flows)
                 yield return (flow.FileName, flow.Mermaid);
             if (Schema is not null)
@@ -33,9 +37,20 @@ internal sealed record RunDiagrams(RequirementMapResult? Requirements, IReadOnly
         var tests = run.Sets.SelectMany(s => s.Tests).ToList();
         var hasRequirements = run.Requirements.Count > 0 || tests.Any(t => t.Covers.Count > 0);
         var requirements = hasRequirements ? RequirementMap.Render(run.Requirements, tests) : null;
-        var schema = snapshotSource is null ? null : SchemaDiagram.RenderSnapshot(snapshotSource, run.Sets.Where(IsSchemaTarget).SelectMany(s => s.Tests).ToList());
-        return new RunDiagrams(requirements, FlowDiagram.Render(tests), schema);
+        var schemaTests = run.Sets.Where(IsSchemaTarget).SelectMany(s => s.Tests).ToList();
+        var schema = snapshotSource is null ? null : SchemaDiagram.RenderSnapshot(snapshotSource, schemaTests);
+        return new RunDiagrams(requirements, FlowDiagram.Render(tests), schema)
+        {
+            ClassMaps = hasRequirements ? ClassMapsOf(run.Requirements, tests) : [],
+            SchemaClasses = schema is null ? new HashSet<string>(StringComparer.Ordinal) : schemaTests.Select(t => t.Class).ToHashSet(StringComparer.Ordinal),
+        };
     }
+
+    private static List<ClassMap> ClassMapsOf(IReadOnlyList<ResultsRequirement> requirements, IReadOnlyList<TestResult> tests) =>
+        tests.Where(t => t.Covers.Count > 0)
+            .GroupBy(RunTree.ThingId, StringComparer.Ordinal)
+            .Select(g => new ClassMap(g.Key, RequirementMap.Render(requirements.Where(r => g.Any(t => t.Covers.Contains(r.Id, StringComparer.Ordinal))).ToList(), g.ToList())))
+            .ToList();
 
     private static bool IsSchemaTarget(TestSet set) =>
         set.ExpectRed || string.Equals(set.Name, MigrationTargetSet, StringComparison.OrdinalIgnoreCase);

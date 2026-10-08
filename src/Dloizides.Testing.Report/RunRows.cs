@@ -24,26 +24,29 @@ internal sealed class RunRows
         var scenario = test.Scenario.Length > 0 ? E(test.Scenario) : "<span class=\"empty\">any input</span>";
         var css = StatusText.Css(test.Status);
         return $"<tbody class=\"t st-{css}\" id=\"{id}\" data-s=\"{search}\"><tr>"
-            + $"<td data-l=\"Scenario\" title=\"{E(test.Name)}\">{scenario}{args}</td><td data-l=\"Expected\">{E(test.Expected)}</td>"
+            + $"<td data-l=\"Scenario\" title=\"{E(test.Name)}\">{scenario}{args}{Reason(test)}</td><td data-l=\"Expected\">{E(test.Expected)}</td>"
             + $"<td class=\"r\"><span class=\"pill {css}\"><span class=\"sw {css}\"></span>{StatusText.Label(test.Status)}</span></td>"
             + $"<td class=\"num\" data-l=\"Time\">{Html.Duration(test.Seconds)}</td></tr>{Note(test)}</tbody>";
     }
 
-    private static string Note(TestResult test)
+    private static string Reason(TestResult test)
     {
         if (test.Status == TestStatus.Skip)
-        {
-            var reason = test.Message.Length > 0 ? test.Message : "no reason given";
-            return $"<tr class=\"why skip\"><td colspan=\"4\" data-k=\"Skipped because\">{E(reason)}</td></tr>";
-        }
-
+            return $"<span class=\"why skip\">Skipped: {E(test.Message.Length > 0 ? test.Message : "no reason given")}</span>";
         if (test.Message.Length == 0 && test.Stack.Length == 0)
             return string.Empty;
         var first = test.Status == TestStatus.XFail ? NotBuiltYet : test.Message.Split('\n')[0];
         if (first.Length > SummaryMessageLength)
             first = first[..SummaryMessageLength] + "...";
+        return $"<span class=\"why {StatusText.Css(test.Status)}\">{E(first)}</span>";
+    }
+
+    private static string Note(TestResult test)
+    {
+        if (test.Status == TestStatus.Skip || (test.Message.Length == 0 && test.Stack.Length == 0))
+            return string.Empty;
         var full = string.Join("\n\n", new[] { test.Message, test.Stack }.Where(p => p.Length > 0));
-        return $"<tr class=\"note {StatusText.Css(test.Status)}\"><td colspan=\"4\"><details><summary><span class=\"msg\">{E(first)}</span></summary>"
+        return $"<tr class=\"note {StatusText.Css(test.Status)}\"><td colspan=\"4\"><details><summary>Full message and stack</summary>"
             + $"<pre>{E(full)}</pre></details></td></tr>";
     }
 }
@@ -91,12 +94,10 @@ internal static class Badges
 
     public static string Chips(Tally tally)
     {
-        var chips = ChipOrder.Select(s =>
-        {
-            var count = s == TestStatus.Fail ? tally[TestStatus.Fail] + tally[TestStatus.XPass] : tally[s];
-            var css = StatusText.Css(s);
-            return $"<span class=\"chip {css}{(count == 0 ? " zero" : string.Empty)}\"><span class=\"sw\"></span>{count} {StatusText.CountWord(s)}</span>";
-        });
+        var chips = ChipOrder
+            .Select(s => (Status: s, Count: s == TestStatus.Fail ? tally[TestStatus.Fail] + tally[TestStatus.XPass] : tally[s]))
+            .Where(c => c.Count > 0)
+            .Select(c => $"<span class=\"chip {StatusText.Css(c.Status)}\"><span class=\"sw\"></span>{c.Count} {StatusText.CountWord(c.Status)}</span>");
         return $"<span class=\"chips\">{string.Concat(chips)}</span>";
     }
 }

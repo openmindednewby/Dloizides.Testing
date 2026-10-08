@@ -1,7 +1,7 @@
 (function(){
 var q=document.getElementById('q'),out=document.getElementById('qn'),zero=document.getElementById('qz');
 var tests=[].slice.call(document.querySelectorAll('#tree tbody.t'));
-var groups=[].slice.call(document.querySelectorAll('#tree details.area,#tree details.thing,#tree details.method'));
+var groups=[].slice.call(document.querySelectorAll('#tree details.grp'));
 var every=[].slice.call(document.querySelectorAll('#tree details'));
 function total(){return tests.length+' tests';}
 function openUp(el){while(el){if(el.tagName==='DETAILS')el.open=true;el=el.parentElement;}}

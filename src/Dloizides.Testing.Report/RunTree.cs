@@ -2,11 +2,24 @@ using System.Text;
 
 namespace Dloizides.Testing.Report;
 
-internal sealed class RunTree(IReadOnlyList<FlowResult> flows)
+internal sealed record Fold(string Kind, string? Id, Tally? Status)
+{
+    public static readonly Fold Inner = new(string.Empty, null, null);
+
+    public IReadOnlyList<string> Crumbs { get; init; } = [];
+
+    public string Meta { get; init; } = string.Empty;
+
+    public string Lead { get; init; } = string.Empty;
+}
+
+internal sealed class RunTree(RunDiagrams diagrams)
 {
     private const string TableHead =
         "<colgroup><col class=\"c1\"><col class=\"c2\"><col class=\"c3\"><col class=\"c4\"></colgroup>"
         + "<thead><tr><th scope=\"col\">Scenario</th><th scope=\"col\">Expected</th><th scope=\"col\">Result</th><th scope=\"col\" class=\"num\">Time</th></tr></thead>";
+
+    private const string Separator = "<span class=\"sep\"> › </span>";
 
     private static readonly StringComparer Ordering = StringComparer.OrdinalIgnoreCase;
 
@@ -40,36 +53,64 @@ internal sealed class RunTree(IReadOnlyList<FlowResult> flows)
         var id = $"a-{areaCounter}-{MermaidText.Slug(feature)}";
         var tally = new Tally(tests);
         nav.Append($"<li><a href=\"#{id}\">{Badges.Dot(tally)}{E(feature)}<span class=\"n\">{tests.Count}</span></a></li>");
-        var builder = new StringBuilder($"<details class=\"area\" id=\"{id}\"><summary><span class=\"tw\"></span>{Badges.Dot(tally)}")
-            .Append($"<span class=\"aname\">{E(feature)}</span>{Badges.Chips(tally)}</summary><div class=\"abody\">");
-        var things = tests.GroupBy(t => (t.Project, t.Class))
-            .OrderBy(g => g.Min(t => (int)t.Status)).ThenBy(g => g.Key.Class, Ordering);
-        foreach (var thing in things)
-            builder.Append(Thing(thing.ToList(), multiProject));
-        return builder.Append("</div></details>").ToString();
+        var classes = tests.GroupBy(t => (t.Project, t.Class))
+            .OrderBy(g => g.Min(t => (int)t.Status)).ThenBy(g => g.Key.Class, Ordering)
+            .Select(g => g.ToList()).ToList();
+        var head = new Fold("area", id, tally) { Crumbs = [E(feature)], Lead = AreaLead(tests) };
+        if (classes.Count == 1)
+            return Thing(classes[0], head, multiProject);
+        var body = new StringBuilder(head.Lead);
+        foreach (var thing in classes)
+            body.Append(Thing(thing, Fold.Inner, multiProject));
+        return Group(head, tests.Count, body.ToString());
     }
 
-    private string Thing(List<TestResult> tests, bool multiProject)
+    private string AreaLead(List<TestResult> tests)
+    {
+        var classes = tests.Select(t => t.Class).ToHashSet(StringComparer.Ordinal);
+        var parts = diagrams.Flows.SelectMany(f => f.Steps.Where(s => s.Things.Any(classes.Contains))
+            .Select(s => $"Part of: <a href=\"#{E(f.Anchor)}\">{E(f.Name)}</a>, step {s.Step} of {f.LastStep}")).ToList();
+        if (diagrams.Schema is not null && classes.Overlaps(diagrams.SchemaClasses))
+            parts.Add("<a href=\"#schema-h\">Database diagram</a>");
+        return string.Concat(parts.Select(p => $"<p class=\"partof\">{p}</p>"));
+    }
+
+    private string Thing(List<TestResult> tests, Fold fold, bool multiProject)
     {
         var first = tests[0];
-        var tally = new Tally(tests);
+        var thingId = ThingId(first);
         var project = multiProject ? $"<span class=\"proj\">{E(first.Project)}</span>" : string.Empty;
-        var steps = FlowSteps(first.Class);
-        var builder = new StringBuilder($"<details class=\"thing\" id=\"{E(ThingId(first))}\"><summary><span class=\"tw\"></span>{Badges.Dot(tally)}")
-            .Append($"<span class=\"tname\">{E(MermaidText.ShortClass(first.Class))}</span><span class=\"type\">{E(Badges.TypeOf(first.Class))}</span>")
-            .Append($"{project}<span class=\"tcount\">{Badges.Count(tests.Count)}</span>{Feeds(steps)}</summary>");
-        foreach (var (flow, index) in steps)
-            builder.Append(FlowLine(flow, index));
-        builder.Append("<div class=\"tbody\">");
+        var anchor = fold.Id is null ? string.Empty : $"<span class=\"anc\" id=\"{E(thingId)}\"></span>";
+        var head = fold with
+        {
+            Kind = fold.Id is null ? "thing" : fold.Kind,
+            Id = fold.Id ?? thingId,
+            Crumbs = [.. fold.Crumbs, $"{E(MermaidText.ShortClass(first.Class))}<span class=\"type\">{E(Badges.TypeOf(first.Class))}</span>"],
+            Meta = fold.Meta + project + anchor + Feeds(FlowSteps(first.Class)),
+            Lead = fold.Lead + RequirementFigure(thingId),
+        };
         var methods = tests.GroupBy(t => t.Method, StringComparer.Ordinal)
-            .OrderBy(g => g.Min(t => (int)t.Status)).ThenBy(g => g.Key, Ordering);
+            .OrderBy(g => g.Min(t => (int)t.Status)).ThenBy(g => g.Key, Ordering)
+            .Select(g => g.ToList()).ToList();
+        if (methods.Count == 1)
+            return Method(methods[0], head);
+        var body = new StringBuilder(head.Lead);
         foreach (var method in methods)
-            builder.Append(Method(method.ToList()));
-        return builder.Append("</div></details>").ToString();
+            body.Append(Method(method, Fold.Inner with { Kind = "method" }));
+        return Group(head, tests.Count, body.ToString());
+    }
+
+    private string RequirementFigure(string thingId)
+    {
+        var map = diagrams.ClassMaps.FirstOrDefault(m => m.Id == thingId);
+        return map is null
+            ? string.Empty
+            : $"<details class=\"rmap\"><summary>Requirement map · {E(map.Map.Header)}</summary>"
+              + $"{RunSections.Figure(new FigureSpec("Requirement, method under test, test", map.Map.Mermaid, map.FileName))}</details>";
     }
 
     private List<(FlowResult Flow, int Index)> FlowSteps(string className) =>
-        flows.SelectMany(f => f.Steps.Select((s, i) => (Flow: f, Index: i, Step: s)))
+        diagrams.Flows.SelectMany(f => f.Steps.Select((s, i) => (Flow: f, Index: i, Step: s)))
             .Where(p => p.Step.Things.Contains(className, StringComparer.Ordinal))
             .Select(p => (p.Flow, p.Index))
             .ToList();
@@ -84,25 +125,24 @@ internal sealed class RunTree(IReadOnlyList<FlowResult> flows)
         return $"<span class=\"feeds\">Feeds:&nbsp;{string.Join(" ", links)}</span>";
     }
 
-    private static string FlowLine(FlowResult flow, int index)
-    {
-        var step = flow.Steps[index].Step;
-        var marks = string.Concat(Enumerable.Range(1, flow.LastStep).Select(i => $"<i class=\"{(i <= step ? "on" : string.Empty)}\"></i>"));
-        var path = string.Join(" &rarr; ", flow.Steps.Select(s => E(string.Join(", ", s.Things.Select(MermaidText.ShortClass)))));
-        return $"<div class=\"flow\"><b>{E(flow.Name)}: step {step} of {flow.LastStep}</b><span class=\"steps\" aria-hidden=\"true\">{marks}</span><span>{path}</span></div>";
-    }
-
-    private string Method(List<TestResult> tests)
+    private string Method(List<TestResult> tests, Fold fold)
     {
         var first = tests[0];
         var description = first.Description.Length > 0
             ? $"<p class=\"desc\">{E(first.Description)}</p>"
             : "<p class=\"desc empty\">No description yet.</p>";
-        var builder = new StringBuilder($"<details class=\"method\"><summary><span class=\"tw\"></span>{Badges.Dot(new Tally(tests))}")
-            .Append($"<span class=\"mname\">{E(first.Method)}</span><span class=\"tcount\">{Badges.Count(tests.Count)}</span></summary>")
-            .Append($"{description}<div class=\"tablebox\"><table>{TableHead}");
+        var head = fold with { Crumbs = [.. fold.Crumbs, $"<span class=\"mname\">{E(first.Method)}</span>"] };
+        var body = new StringBuilder(description).Append(head.Lead).Append($"<div class=\"tablebox\"><table>{TableHead}");
         foreach (var test in tests.OrderBy(t => (int)t.Status).ThenBy(t => t.Name, Ordering))
-            builder.Append(rows.Row(test));
-        return builder.Append("</table></div></details>").ToString();
+            body.Append(rows.Row(test));
+        return Group(head, tests.Count, body.Append("</table></div>").ToString());
+    }
+
+    private static string Group(Fold head, int scenarios, string body)
+    {
+        var id = head.Id is null ? string.Empty : $" id=\"{E(head.Id)}\"";
+        var chips = head.Status is null ? string.Empty : Badges.Chips(head.Status);
+        return $"<details class=\"grp {head.Kind}\"{id}><summary><span class=\"tw\"></span><span class=\"gh\"><span class=\"gname\">{string.Join(Separator, head.Crumbs)}</span>"
+            + $"<span class=\"tcount\">{Badges.Count(scenarios)}</span>{head.Meta}{chips}</span></summary><div class=\"gbody\">{body}</div></details>";
     }
 }

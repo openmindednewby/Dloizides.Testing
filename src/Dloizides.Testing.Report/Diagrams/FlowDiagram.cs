@@ -13,6 +13,8 @@ internal sealed record FlowResult(string Name, IReadOnlyList<FlowStep> Steps, st
 {
     public string FileName => $"flow-{MermaidText.Slug(Name)}.mmd";
 
+    public string Anchor => $"f-{MermaidText.Slug(Name)}";
+
     public int LastStep => Steps.Count == 0 ? 0 : Steps[^1].Step;
 }
 
