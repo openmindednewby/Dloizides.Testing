@@ -8,7 +8,6 @@ public static class MethodUnderTestCoverage
     /// <summary>The shortest description <see cref="Invalid"/> accepts by default.</summary>
     public const int DefaultMinimumDescriptionLength = 20;
 
-    private const string FactAttributeName = "FactAttribute";
     private const char NameSeparator = '_';
 
     /// <summary>Returns "FullClassName: Prefix" for every test-name prefix its class does not describe.</summary>
@@ -16,7 +15,7 @@ public static class MethodUnderTestCoverage
     {
         ArgumentNullException.ThrowIfNull(assembly);
 
-        return TestClasses(assembly)
+        return TestDiscovery.TestClasses(assembly)
             .SelectMany(type => TestedMethods(type)
                 .Except(Descriptions(type).Select(attribute => attribute.Method))
                 .Select(method => Entry(type, method)))
@@ -30,7 +29,7 @@ public static class MethodUnderTestCoverage
         ArgumentNullException.ThrowIfNull(assembly);
         ArgumentOutOfRangeException.ThrowIfNegative(minLength);
 
-        return TestClasses(assembly)
+        return TestDiscovery.TestClasses(assembly)
             .SelectMany(type => InvalidDescriptions(type, minLength).Select(attribute => Entry(type, attribute.Method)))
             .Order(StringComparer.Ordinal)
             .ToList();
@@ -49,40 +48,8 @@ public static class MethodUnderTestCoverage
 
     private static string Entry(Type type, string method) => $"{type.FullName}: {method}";
 
-    private static IEnumerable<Type> TestClasses(Assembly assembly) =>
-        LoadableTypes(assembly).Where(type => IsConcreteOrStaticClass(type) && TestMethods(type).Any());
-
-    private static bool IsConcreteOrStaticClass(Type type) => type.IsClass && (!type.IsAbstract || type.IsSealed);
-
-    private static IEnumerable<Type> LoadableTypes(Assembly assembly)
-    {
-        try
-        {
-            return assembly.GetTypes();
-        }
-        catch (ReflectionTypeLoadException exception)
-        {
-            return exception.Types.OfType<Type>();
-        }
-    }
-
-    private static IEnumerable<MethodInfo> TestMethods(Type type) =>
-        type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static).Where(IsFact);
-
-    private static bool IsFact(MethodInfo method) =>
-        method.GetCustomAttributes(inherit: true).Any(attribute => IsFactAttributeType(attribute.GetType()));
-
-    private static bool IsFactAttributeType(Type? type)
-    {
-        for (; type is not null; type = type.BaseType)
-            if (type.Name == FactAttributeName)
-                return true;
-
-        return false;
-    }
-
     private static HashSet<string> TestedMethods(Type type) =>
-        TestMethods(type).Select(method => method.Name.Split(NameSeparator)[0]).ToHashSet(StringComparer.Ordinal);
+        TestDiscovery.TestMethods(type).Select(method => method.Name.Split(NameSeparator)[0]).ToHashSet(StringComparer.Ordinal);
 
     private static IEnumerable<MethodUnderTestAttribute> Descriptions(Type type) =>
         type.GetCustomAttributes<MethodUnderTestAttribute>(inherit: true);

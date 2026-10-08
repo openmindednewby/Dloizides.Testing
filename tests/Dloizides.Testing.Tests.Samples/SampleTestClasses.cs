@@ -113,3 +113,21 @@ public static class StaticFactSample
     {
     }
 }
+
+[MethodUnderTest("Submit", "Submits the declaration to the market operator.")]
+[Requirement("AC-01", "A declared requirement that no test covers.")]
+[Requirement("AC-02", "A declared requirement that one test covers.")]
+public class RequirementSample
+{
+    [Fact]
+    [Covers("AC-02")]
+    public void Submit_WhenValid_SendsIt()
+    {
+    }
+
+    [Fact]
+    [Covers("AC-99")]
+    public void Submit_WhenLate_RejectsIt()
+    {
+    }
+}

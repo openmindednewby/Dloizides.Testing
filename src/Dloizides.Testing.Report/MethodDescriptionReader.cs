@@ -15,17 +15,17 @@ internal static partial class MethodDescriptionReader
     public static Dictionary<string, string> ReadDirectories(IEnumerable<string> roots)
     {
         var descriptions = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (var root in roots.Where(Directory.Exists))
-        {
-            var files = Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories)
-                .Where(f => !IsBuildOutput(Path.GetRelativePath(root, f)))
-                .Order(StringComparer.Ordinal);
-            foreach (var file in files)
-                Collect(File.ReadAllText(file), descriptions);
-        }
+        foreach (var file in SourceFiles(roots))
+            Collect(File.ReadAllText(file), descriptions);
 
         return descriptions;
     }
+
+    public static IEnumerable<string> SourceFiles(IEnumerable<string> roots) =>
+        roots.Where(Directory.Exists).SelectMany(root => Directory
+            .EnumerateFiles(root, "*.cs", SearchOption.AllDirectories)
+            .Where(f => !IsBuildOutput(Path.GetRelativePath(root, f)))
+            .Order(StringComparer.Ordinal));
 
     public static Dictionary<string, string> Parse(string source)
     {
