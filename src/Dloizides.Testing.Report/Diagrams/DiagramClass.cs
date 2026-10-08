@@ -15,8 +15,8 @@ internal static class DiagramClass
         (Fail, "fill:#b3261e,stroke:#b3261e,color:#ffffff"),
         (Skip, "fill:#6b7785,stroke:#6b7785,color:#ffffff"),
         (XFail, "fill:#9a5b06,stroke:#9a5b06,color:#ffffff"),
-        (Empty, "fill:#ffffff,stroke:#6b7785,stroke-dasharray:4 3,color:#17212b"),
-        (Plain, "fill:#ffffff,stroke:#556372,color:#17212b"),
+        (Empty, "stroke:#6b7785,stroke-dasharray:4 3"),
+        (Plain, "stroke:#556372"),
     ];
 
     public static string For(TestStatus status) => status switch

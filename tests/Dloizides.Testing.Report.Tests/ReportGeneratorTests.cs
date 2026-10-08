@@ -54,7 +54,7 @@ public sealed class ReportGeneratorTests : IDisposable
         html.ShouldSatisfyAllConditions(
             () => html.ShouldNotContain("Feeds:"),
             () => html.ShouldNotContain("class=\"flow\""),
-            () => html.ShouldNotContain("<pre class=\"mermaid\">"));
+            () => html.ShouldNotContain("class=\"mermaid\""));
     }
 
     [Fact]
@@ -88,7 +88,8 @@ public sealed class ReportGeneratorTests : IDisposable
         html.ShouldSatisfyAllConditions(
             () => html.ShouldContain("Feeds:&nbsp;<a href=\"#c-shop-tests-parsertests\">Parser &#9656;</a>"),
             () => html.ShouldContain("<b>Import: step 1 of 2</b>"),
-            () => html.ShouldContain("<pre class=\"mermaid\">flowchart LR"),
+            () => html.ShouldContain("<div class=\"mermaid\">flowchart LR"),
+            () => html.ShouldContain("<a href=\"flow-import.html\">Open full size</a>"),
             () => File.ReadAllText(Path.Combine(run, "flow-import.mmd")).ShouldContain("s1 --> s2"));
     }
 

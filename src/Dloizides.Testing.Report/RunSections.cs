@@ -51,5 +51,6 @@ internal static class RunSections
     }
 
     private static string Figure(string caption, string mermaid, string fileName) =>
-        $"<figure class=\"diagram\"><pre class=\"mermaid\">{E(mermaid)}</pre><figcaption>{E(caption)} · <a href=\"{E(fileName)}\">{E(fileName)}</a></figcaption></figure>";
+        $"<figure class=\"diagram\"><div class=\"scroll\"><div class=\"mermaid\">{E(mermaid)}</div></div><figcaption>{E(caption)} · "
+        + $"<a href=\"{E(RunDiagrams.PageOf(fileName))}\">Open full size</a> · <a href=\"{E(fileName)}\">{E(fileName)}</a></figcaption></figure>";
 }

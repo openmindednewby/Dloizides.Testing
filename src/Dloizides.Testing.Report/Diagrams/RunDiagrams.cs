@@ -6,7 +6,8 @@ internal sealed record RunDiagrams(RequirementMapResult? Requirements, IReadOnly
 {
     public const string MermaidScript =
         "<script src=\"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.6.0/mermaid.min.js\" integrity=\"sha512-3Ix7UjkWptQ1zS6VvZzzy4QPkYfhcr5fFOmxbsvgT/83J563DkKHEVHV0jmFNtSyfRU9SLfLsGTly/QpkzegHQ==\" crossorigin=\"anonymous\" referrerpolicy=\"no-referrer\"></script>"
-        + "<script>mermaid.initialize({startOnLoad:true,securityLevel:\"strict\",theme:\"neutral\"});</script>";
+        + "<script>var dark=matchMedia(\"(prefers-color-scheme: dark)\").matches;mermaid.initialize({startOnLoad:true,securityLevel:\"strict\","
+        + "theme:dark?\"dark\":\"neutral\",flowchart:{useMaxWidth:false,wrappingWidth:400},er:{useMaxWidth:false}});</script>";
 
     private const string MigrationTargetSet = "MigrationTarget";
 
@@ -42,6 +43,16 @@ internal sealed record RunDiagrams(RequirementMapResult? Requirements, IReadOnly
     public void WriteFiles(string folder, Encoding encoding)
     {
         foreach (var (fileName, mermaid) in Files)
+        {
             File.WriteAllText(Path.Combine(folder, fileName), mermaid, encoding);
+            File.WriteAllText(Path.Combine(folder, PageOf(fileName)), FullSizePage(fileName, mermaid), encoding);
+        }
     }
+
+    public static string PageOf(string fileName) => Path.ChangeExtension(fileName, ".html");
+
+    private static string FullSizePage(string fileName, string mermaid) =>
+        "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
+        + $"<title>{Html.Encode(fileName)}</title><style>:root{{color-scheme:light dark}}body{{margin:0;padding:16px;font:15px/1.5 system-ui,sans-serif}}</style></head>"
+        + $"<body><div class=\"mermaid\">{Html.Encode(mermaid)}</div>{MermaidScript}</body></html>";
 }

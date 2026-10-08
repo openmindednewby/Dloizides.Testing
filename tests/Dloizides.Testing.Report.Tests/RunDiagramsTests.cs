@@ -3,6 +3,7 @@ using static Dloizides.Testing.Report.Tests.DiagramSamples;
 namespace Dloizides.Testing.Report.Tests;
 
 [MethodUnderTest("MermaidScript", "Loads the pinned Mermaid build from cdnjs only when its sha512 integrity hash matches.")]
+[MethodUnderTest("WriteFiles", "Writes each diagram as a .mmd file and a standalone full-size page beside the run page.")]
 [MethodUnderTest("Build", "Builds the run's diagrams; the schema is coloured only by target tests in expected-red sets.")]
 public class RunDiagramsTests
 {
@@ -32,5 +33,32 @@ public class RunDiagramsTests
         var diagrams = RunDiagrams.Build(run, snapshot);
 
         Assert.Equal(new Dictionary<string, string> { ["a"] = "plain", ["b"] = "xfail" }, diagrams.Schema!.TableClasses);
+    }
+
+    [Fact]
+    public void MermaidScript_WithDarkSystemTheme_RendersAtNaturalSizeInDarkTheme()
+    {
+        const string darkQuery = "matchMedia(\"(prefers-color-scheme: dark)\").matches";
+
+        var script = RunDiagrams.MermaidScript;
+
+        Assert.Contains(darkQuery, script, StringComparison.Ordinal);
+        Assert.Contains("theme:dark?\"dark\":\"neutral\"", script, StringComparison.Ordinal);
+        Assert.Contains("er:{useMaxWidth:false}", script, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void WriteFiles_WithSchema_WritesFullSizePageBesideTheMmd()
+    {
+        var folder = Path.Combine(Path.GetTempPath(), "test-report-mmd-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        var diagrams = new RunDiagrams(null, [], new SchemaResult("erDiagram\n    a {\n    }\n", new Dictionary<string, string>()));
+
+        diagrams.WriteFiles(folder, new System.Text.UTF8Encoding(false));
+
+        var page = File.ReadAllText(Path.Combine(folder, "schema.html"));
+        Directory.Delete(folder, true);
+        Assert.Contains("<div class=\"mermaid\">erDiagram\n    a {\n    }\n</div>", page, StringComparison.Ordinal);
+        Assert.Contains(RunDiagrams.MermaidScript, page, StringComparison.Ordinal);
     }
 }

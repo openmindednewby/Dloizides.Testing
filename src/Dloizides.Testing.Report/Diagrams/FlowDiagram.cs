@@ -6,7 +6,7 @@ internal sealed record FlowStep(int Step, string Class, IReadOnlyList<TestResult
 {
     public IReadOnlyList<string> Things => Tests.Select(t => t.Class).Distinct(StringComparer.Ordinal).ToList();
 
-    public string Label => $"Step {Step}: {string.Join(", ", Tests.Select(MermaidText.MethodKey).Distinct(StringComparer.Ordinal))}";
+    public string MermaidLabel => $"Step {Step}: {string.Join("<br/>", Tests.Select(MermaidText.MethodKey).Distinct(StringComparer.Ordinal).Select(MermaidText.Label))}";
 }
 
 internal sealed record FlowResult(string Name, IReadOnlyList<FlowStep> Steps, string Mermaid)
@@ -37,7 +37,7 @@ internal static class FlowDiagram
         var builder = new StringBuilder("flowchart LR\n");
         builder.Append($"{Indent}subgraph flow[\"{MermaidText.Label(name)}\"]\n");
         foreach (var step in steps)
-            builder.Append($"{Indent}{Indent}s{step.Step}[\"{MermaidText.Label(step.Label)}\"]:::{step.Class}\n");
+            builder.Append($"{Indent}{Indent}s{step.Step}[\"{step.MermaidLabel}\"]:::{step.Class}\n");
         builder.Append($"{Indent}end\n");
         for (var i = 1; i < steps.Count; i++)
             builder.Append($"{Indent}s{steps[i - 1].Step} --> s{steps[i].Step}\n");

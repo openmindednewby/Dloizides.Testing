@@ -2,11 +2,12 @@
 var q=document.getElementById('q'),out=document.getElementById('qn'),zero=document.getElementById('qz');
 var tests=[].slice.call(document.querySelectorAll('#tree tbody.t'));
 var groups=[].slice.call(document.querySelectorAll('#tree details.area,#tree details.thing,#tree details.method'));
+var every=[].slice.call(document.querySelectorAll('#tree details'));
 function total(){return tests.length+' tests';}
 function openUp(el){while(el){if(el.tagName==='DETAILS')el.open=true;el=el.parentElement;}}
 out.textContent=total();
-document.getElementById('openAll').addEventListener('click',function(){groups.forEach(function(d){if(!d.hidden)d.open=true;});});
-document.getElementById('closeAll').addEventListener('click',function(){groups.forEach(function(d){d.open=false;});});
+document.getElementById('openAll').addEventListener('click',function(){every.forEach(function(d){if(!d.closest('[hidden]'))d.open=true;});});
+document.getElementById('closeAll').addEventListener('click',function(){every.forEach(function(d){d.open=false;});});
 q.addEventListener('input',function(){
 var v=q.value.trim().toLowerCase(),words=v.split(/\s+/).filter(Boolean),n=0;
 tests.forEach(function(t){var d=t.getAttribute('data-s'),hit=words.every(function(w){return d.indexOf(w)>=0;});t.hidden=!hit;if(hit)n++;});

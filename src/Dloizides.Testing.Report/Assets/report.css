@@ -39,8 +39,10 @@ h2{font:600 1.3rem/1.2 var(--f-d);margin:2rem 0 .75rem}
 .req li a{display:inline-flex;align-items:center;min-height:44px;font-size:.88rem;overflow-wrap:anywhere}
 .none-yet{display:block;color:var(--muted);font-size:.88rem;padding:10px 0}
 .diagrams{margin:16px 0}
-.diagram{margin:12px 0 0;background:var(--surface);border:1px solid var(--line);padding:12px;overflow-x:auto}
-.diagram pre.mermaid{margin:0;background:#ffffff;color:#17212b;max-height:none;overflow:visible}
+.diagram{margin:12px 0 0;background:var(--surface);border:1px solid var(--line);padding:12px;min-width:0}
+.diagram .scroll{overflow:auto;max-height:80vh;-webkit-overflow-scrolling:touch}
+.diagram .mermaid{width:max-content;min-width:100%;white-space:normal;overflow-wrap:normal;word-break:normal;color:var(--ink)}
+.diagram .mermaid svg{max-width:none}
 .diagram figcaption{color:var(--muted);font-size:.85rem;margin-top:8px}
 .diagram figcaption a{display:inline-flex;align-items:center;min-height:44px}
 .tools{position:sticky;top:0;z-index:3;background:var(--bg);padding:10px 0;display:flex;gap:8px 10px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--line);margin-top:16px}
@@ -56,7 +58,7 @@ nav.areas h2{font:600 .78rem var(--f-b);letter-spacing:.06em;text-transform:uppe
 nav.areas ul{list-style:none;margin:0;padding:0;display:grid;gap:2px}
 nav.areas a{display:flex;align-items:center;gap:8px;min-height:44px;padding:4px 10px;text-decoration:none;color:var(--ink);border-left:3px solid transparent;background:var(--surface);overflow-wrap:anywhere}
 nav.areas a:hover{border-left-color:var(--accent)}
-nav.areas .n{margin-left:auto;color:var(--muted);font-size:.85rem;font-variant-numeric:tabular-nums}
+nav.areas .n{white-space:nowrap;min-width:3ch;text-align:right;margin-left:auto;color:var(--muted);font-size:.85rem;font-variant-numeric:tabular-nums}
 .dot{width:10px;height:10px;border-radius:50%;flex:none;display:inline-block}
 .dot.red{background:var(--fail)}.dot.amber{background:var(--xfail);box-shadow:0 0 0 2px var(--surface),0 0 0 3px var(--xfail)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
@@ -69,7 +71,7 @@ details.area{background:var(--surface);border:1px solid var(--line);margin:0 0 1
 details.area>summary{min-height:56px;display:flex;align-items:center;gap:8px 12px;padding:10px 14px;flex-wrap:wrap}
 .aname{font:600 1.25rem var(--f-d);overflow-wrap:anywhere}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}
-.chip{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border:1px solid var(--line);font-size:.82rem;font-variant-numeric:tabular-nums;background:var(--bg)}
+.chip{white-space:nowrap;flex:none;display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border:1px solid var(--line);font-size:.82rem;font-variant-numeric:tabular-nums;background:var(--bg)}
 .chip.zero{opacity:.55}
 .sw{width:10px;height:10px;display:inline-block;background:var(--c);flex:none}
 .pass{--c:var(--pass)}.fail,.xpass{--c:var(--fail)}.xfail{--c:var(--xfail)}.skip{--c:var(--skip)}
