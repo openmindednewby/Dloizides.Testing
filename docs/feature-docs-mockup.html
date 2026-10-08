@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Feature Docs Mockup</title>
+<meta name="description" content="TESTDOC-1 Tests draw the docs: pick the feature header, Why card, per-feature diagrams and section order for the Dloizides.Testing report.">
+<style>
+:root{--bg:#eef1f4;--surface:#ffffff;--ink:#17212b;--muted:#556372;--line:#d3dae2;--pass:#1d7348;--xfail:#9a5b06;--fail:#b3261e;--skip:#6b7785;--accent:#1f5f8b;--example:#6a4c93;
+--f-d:Bahnschrift,"DIN Alternate","Segoe UI Variable Display","Segoe UI",sans-serif;--f-b:"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;--f-m:"Cascadia Mono",Consolas,ui-monospace,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1419;--surface:#161d24;--ink:#e3e8ee;--muted:#9aa7b5;--line:#2a343f;--pass:#55b884;--xfail:#e3a447;--fail:#f2766c;--skip:#8f9bab;--accent:#7cb7e0;--example:#b9a2dc;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1419;--surface:#161d24;--ink:#e3e8ee;--muted:#9aa7b5;--line:#2a343f;--pass:#55b884;--xfail:#e3a447;--fail:#f2766c;--skip:#8f9bab;--accent:#7cb7e0;--example:#b9a2dc;color-scheme:dark}
+:root{--tint:color-mix(in srgb,var(--accent) 7%,var(--surface))}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-b)}
+.wrap{max-width:1200px;margin:0 auto;padding:16px 16px 96px}
+a{color:var(--accent)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+h1{font:600 2rem/1.15 var(--f-d);margin:.25rem 0 .35rem;text-wrap:balance}
+h2{font:600 1.3rem/1.2 var(--f-d);margin:0 0 4px}
+h3{font:600 1rem/1.3 var(--f-d);margin:0 0 8px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.when{color:var(--muted);margin:0 0 16px;font-variant-numeric:tabular-nums}
+.mock{border:1px dashed var(--example);color:var(--example);font-size:.75rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:1px 7px;display:inline-block;white-space:nowrap}
+.blk{background:var(--surface);border:1px solid var(--line);padding:16px;margin:0 0 24px}
+.blk>p.qline{margin:0 0 14px;color:var(--muted)}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:12px}
+.opt{display:flex;flex-direction:column;gap:10px;border:2px solid var(--line);padding:12px;background:var(--bg);cursor:pointer;min-width:0}
+.opt:has(input:checked){border-color:var(--accent);background:var(--tint)}
+.opt .ol{display:flex;gap:10px;align-items:center;min-height:44px;font-weight:600}
+.opt input{width:22px;height:22px;margin:0;accent-color:var(--accent);flex:none}
+.lt{font:700 .9rem var(--f-m);border:1px solid var(--ink);padding:0 6px}
+.rec{font-weight:400;color:var(--pass);font-size:.85rem}
+.esc{display:flex;flex-wrap:wrap;gap:8px 20px;margin:12px 0 8px}
+.esc label{display:flex;gap:8px;align-items:center;min-height:44px;cursor:pointer}
+.esc input{width:22px;height:22px;accent-color:var(--accent)}
+textarea{width:100%;min-height:64px;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);padding:8px}
+pre.code{margin:0;font:12.5px/1.45 var(--f-m);background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);padding:8px 10px;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--ink)}
+pre.code .k{color:var(--accent)}
+.cap{font-size:.8rem;color:var(--muted);margin:0}
+/* feature header pieces (mirror report.css .grp summary) */
+.fh{background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--tone);padding:10px 12px;display:grid;gap:2px;min-width:0}
+.fh .t{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline}
+.fh .name{font:600 1.15rem/1.25 var(--f-d)}
+.kind{font:600 .7rem/1 var(--f-b);letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--muted);color:var(--muted);padding:3px 6px;white-space:nowrap}
+.path{font:12.5px/1.4 var(--f-m);color:var(--muted);overflow-wrap:anywhere}
+.chips{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:.85rem;font-variant-numeric:tabular-nums;margin-left:auto}
+.chip{display:inline-flex;gap:5px;align-items:center;white-space:nowrap}
+.sw{width:10px;height:10px;display:inline-block}
+.chip.pass .sw{background:var(--pass)}.chip.skip .sw{background:var(--skip)}
+.green{--tone:var(--pass)}.grey{--tone:var(--skip)}
+.fhC{display:grid;grid-template-columns:auto 1fr;border:1px solid var(--line);background:var(--surface)}
+.fhC .tag{writing-mode:vertical-rl;transform:rotate(180deg);background:var(--tone);color:var(--surface);font:700 .65rem var(--f-b);letter-spacing:.08em;text-transform:uppercase;padding:6px 4px;text-align:center}
+.fhC .in{padding:10px 12px;min-width:0}
+.bar{display:flex;gap:2px;height:6px;background:var(--line);margin-top:6px}
+.seg.pass{background:var(--pass)}.seg.skip{background:var(--skip)}
+.reason{font-size:.85rem;color:var(--muted);margin:2px 0 0;padding-left:10px;border-left:2px solid var(--skip)}
+/* why cards */
+.why{background:var(--surface);border:1px solid var(--line);padding:12px;display:grid;gap:8px;min-width:0}
+.draft{font:600 .7rem var(--f-b);letter-spacing:.05em;text-transform:uppercase;color:var(--xfail);border:1px dashed var(--xfail);padding:1px 6px;justify-self:start}
+.why dl{margin:0;display:grid;grid-template-columns:minmax(4.5rem,auto) 1fr;gap:6px 12px}
+.why dt{font:600 .8rem var(--f-d);text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding-top:2px}
+.why dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.src{font:11.5px var(--f-m);color:var(--muted);overflow-wrap:anywhere}
+.flag{font-size:.85rem;border-left:3px solid var(--xfail);padding:2px 0 2px 8px;margin:0}
+.lead{font:500 1.02rem/1.45 var(--f-b);margin:0;overflow-wrap:anywhere}
+.chain{display:flex;flex-wrap:wrap;gap:4px;align-items:center;list-style:none;padding:0;margin:0}
+.chain li{font:12px/1.3 var(--f-m);border:1px solid var(--line);background:var(--bg);padding:4px 6px;overflow-wrap:anywhere;max-width:100%}
+.chain li.arrow{border:0;background:none;padding:0 2px;color:var(--muted)}
+.chain li.unk{border-style:dashed;color:var(--muted)}
+.owner{font-size:.85rem;color:var(--muted);border-top:1px solid var(--line);padding-top:6px}
+details.mini summary{cursor:pointer;min-height:44px;display:flex;align-items:center;color:var(--accent)}
+/* diagrams */
+.feat{margin:0 0 20px}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:12px}
+.dpanel.wide{grid-column:1/-1}
+.dpanel{border:1px solid var(--line);background:var(--bg);padding:10px;display:grid;gap:8px;align-content:start;min-width:0}
+.dpanel .mermaid{background:var(--surface);border:1px solid var(--line);padding:8px;margin:0;overflow-x:auto;text-align:center;min-height:80px}
+.illu{font:600 .7rem var(--f-b);letter-spacing:.05em;text-transform:uppercase;color:var(--example);border:1px dashed var(--example);padding:1px 6px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.8rem;color:var(--muted);margin:0 0 12px}
+.legend .sw.empty{border:1px dashed var(--skip);background:none}
+/* wireframe schematics */
+.wf{display:grid;gap:4px;background:var(--surface);border:1px solid var(--line);padding:8px}
+.wf div{font:600 .75rem var(--f-b);padding:6px 8px;border:1px solid var(--line);background:var(--bg)}
+.wf .on{border-left:4px solid var(--accent)}
+.wf .off{border-style:dashed;color:var(--muted);font-weight:400}
+.wf2{display:grid;grid-template-columns:1.6fr 1fr;gap:4px}
+.wf2>div{display:grid;gap:4px;align-content:start;padding:0;border:0;background:none}
+.side{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:10px}
+@media (max-width:720px){.side{grid-template-columns:1fr}}
+.toolbar{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:8px 16px;display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap}
+.toolbar button{min-height:44px;padding:0 18px;font:600 .95rem var(--f-b);background:var(--accent);color:var(--surface);border:0;cursor:pointer}
+.toolbar .prog{color:var(--muted);font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<main class="wrap">
+<span class="mock">Mockup</span>
+<h1>Feature docs: pick the shape</h1>
+<p class="when">TESTDOC-1 "Tests draw the docs" · real data from RENER Trading run 20261008-232831 · ADMIE settlement import (16 passed) · Battery availability (3 passed, 1 skipped)</p>
+
+<!-- Q1 -->
+<section class="blk" data-q="q1">
+<h2>Q1 · Feature header</h2>
+<p class="qline">Which header replaces "Battery availability › BatteryAvailabilityEndpoint Endpoint › BatteryAvailability"?</p>
+<div class="opts">
+ <label class="opt"><span class="ol"><input type="radio" name="q1" value="A"><span class="lt">A</span>Title + kind tag, code path as mono subtitle <span class="rec">recommended</span></span>
+  <div class="fh green"><div class="t"><span class="name">ADMIE settlement import</span><span class="kind">Flow · 3 classes</span><span class="chips"><span class="chip pass"><span class="sw"></span>16 passed</span></span></div><div class="path">AdmieDataFetchJob · AdmieIspResultsParser · AdmieRepository</div></div>
+  <div class="fh grey"><div class="t"><span class="name">Battery availability</span><span class="kind">Endpoint</span><span class="chips"><span class="chip pass"><span class="sw"></span>3 passed</span><span class="chip skip"><span class="sw"></span>1 skipped</span></span></div><div class="path">BatteryAvailabilityEndpointTests.BatteryAvailability</div></div>
+  <pre class="code"><span class="k">[MethodUnderTest]</span>("BatteryAvailability", "...")
+// kind = class suffix: Endpoint, Job, Parser, Repository
+// no new attribute</pre>
+ </label>
+ <label class="opt"><span class="ol"><input type="radio" name="q1" value="B"><span class="lt">B</span>Title + kind tag, entry point as subtitle (route or job id)</span>
+  <div class="fh green"><div class="t"><span class="name">ADMIE settlement import</span><span class="kind">Job</span><span class="chips"><span class="chip pass"><span class="sw"></span>16 passed</span></span></div><div class="path">Hangfire fetch-admie-data · cron AdmieApi:FetchCronExpression</div></div>
+  <div class="fh grey"><div class="t"><span class="name">Battery availability</span><span class="kind">Endpoint</span><span class="chips"><span class="chip pass"><span class="sw"></span>3 passed</span><span class="chip skip"><span class="sw"></span>1 skipped</span></span></div><div class="path">GET api/v1/Account/battery-availability</div></div>
+  <pre class="code"><span class="k">[assembly: Feature]</span>("Battery availability",
+    Kind = "Endpoint",
+    Entry = "GET api/v1/Account/battery-availability")</pre>
+ </label>
+ <label class="opt"><span class="ol"><input type="radio" name="q1" value="C"><span class="lt">C</span>Kind as a coloured edge tab, result bar under the title</span>
+  <div class="fhC green"><span class="tag">Flow</span><div class="in"><div class="fh" style="border:0;padding:0"><span class="name">ADMIE settlement import</span><span class="path">AdmieDataFetchJob · AdmieIspResultsParser · AdmieRepository</span></div><div class="bar"><span class="seg pass" style="flex:16"></span></div></div></div>
+  <div class="fhC grey"><span class="tag">Endpoint</span><div class="in"><div class="fh" style="border:0;padding:0"><span class="name">Battery availability</span><span class="path">BatteryAvailabilityEndpointTests.BatteryAvailability</span></div><div class="bar"><span class="seg pass" style="flex:3"></span><span class="seg skip" style="flex:1"></span></div><p class="reason">1 skipped: the page crashes with a server error; it never reads the time step, so it divides by zero</p></div></div>
+  <pre class="code">// same attributes as A; kind drives the tab
+// tab colour = worst result in the feature</pre>
+ </label>
+</div>
+<div class="esc"><label><input type="radio" name="q1" value="changes">Changes needed (note)</label><label><input type="radio" name="q1" value="redraw">None, redraw</label></div>
+<textarea id="q1-note" aria-label="Q1 note" placeholder="Note for Q1"></textarea>
+</section>
+
+<!-- Q2 -->
+<section class="blk" data-q="q2">
+<h2>Q2 · Why card</h2>
+<p class="qline">How does each feature show Why / Context / Owner? Text is Claude's draft from the code; correct it in the note.</p>
+<div class="opts">
+ <label class="opt"><span class="ol"><input type="radio" name="q2" value="A"><span class="lt">A</span>Labelled rows, review flags inline <span class="rec">recommended</span></span>
+  <div class="why"><span class="draft">Draft - needs owner review</span><dl>
+   <dt>Why</dt><dd>Downloads ADMIE's ISP results files (ISP1, ISP2, ISP3, Adhoc) from admie.gr and stores each of our portfolios' storage-unit up and down energy per quarter-hour, once per file.<div class="src">AdmieService.cs:14-17</div></dd>
+   <dt>Context</dt><dd>Hangfire job fetch-admie-data, on cron AdmieApi:FetchCronExpression and once at startup; checks today's and tomorrow's files. Who reads the stored rows: not traced.<div class="src">TradingApplicationBuilderExtensions.cs:62-69 · AdmieService.cs:44</div></dd>
+   <dt>Owner</dt><dd class="cap">Not set</dd></dl>
+   <p class="flag">Code comment says aFRR only (AdmieService.cs:15); parser tests read FCR and aFRR sheets. Which is current?</p></div>
+  <div class="why"><span class="draft">Draft - needs owner review</span><dl>
+   <dt>Why</dt><dd>Returns, for one portfolio, how much energy its batteries could buy (charge) or sell (discharge) in each slot of the delivery day, taken from the optimizer's DAM schedule.<div class="src">AccountService.cs:30-45 · BatteryAvailabilityDto.cs</div></dd>
+   <dt>Context</dt><dd>Only in-code callers, Recalculate and InitializeDeclaration, are marked "NOT USED - LEGACY". minPriceSlot and maxPriceSlot are ignored.<div class="src">DeclarationsService.cs:108,131 · AccountService.cs:33</div></dd>
+   <dt>Owner</dt><dd class="cap">Not set</dd></dl>
+   <p class="flag">Current description says "HENEX declarations call it internally"; the callers are legacy. Is the endpoint still needed?</p></div>
+  <pre class="code"><span class="k">[assembly: Feature]</span>("ADMIE settlement import",
+    Why = "Downloads ADMIE's ISP results files ...",
+    Context = "Hangfire fetch-admie-data ...",
+    Owner = "")]
+// guard test: every feature name used by a test
+// has a Feature attribute with a non-empty Why</pre>
+ </label>
+ <label class="opt"><span class="ol"><input type="radio" name="q2" value="B"><span class="lt">B</span>Why as a lead line, Context as a call chain</span>
+  <div class="why"><span class="draft">Draft - needs owner review</span>
+   <p class="lead">Stores each portfolio's storage-unit up and down energy per quarter-hour from ADMIE's ISP results files, once per file.</p>
+   <ol class="chain"><li>Hangfire fetch-admie-data</li><li class="arrow">→</li><li>admie.gr ISP file</li><li class="arrow">→</li><li>AdmieIspResultsParser</li><li class="arrow">→</li><li>AdmieFileEntries / AdmieRows / AdmieEntries</li><li class="arrow">→</li><li class="unk">reader not traced</li></ol>
+   <div class="owner">Owner: not set</div></div>
+  <div class="why"><span class="draft">Draft - needs owner review</span>
+   <p class="lead">Per-slot buy and sell capacity for one portfolio, from the optimizer's DAM schedule.</p>
+   <ol class="chain"><li>GET battery-availability</li><li class="arrow">→</li><li>AccountService</li><li class="arrow">→</li><li>OptimizationService.GetDamScheduleAsync</li><li class="arrow">→</li><li>ToBatteryAvailability</li><li class="arrow">←</li><li class="unk">callers: legacy only</li></ol>
+   <div class="owner">Owner: not set</div></div>
+  <pre class="code"><span class="k">[assembly: Feature]</span>("Battery availability",
+    Why = "Per-slot buy and sell capacity ...",
+    Context = new[] { "GET battery-availability",
+      "AccountService", "OptimizationService",
+      "ToBatteryAvailability" },
+    Owner = "")]</pre>
+ </label>
+ <label class="opt"><span class="ol"><input type="radio" name="q2" value="C"><span class="lt">C</span>Why only; Context and Owner folded</span>
+  <div class="why"><span class="draft">Draft - needs owner review</span>
+   <p class="lead">Stores each portfolio's storage-unit up and down energy per quarter-hour from ADMIE's ISP results files.</p>
+   <details class="mini"><summary>Context and owner</summary><p class="cap">Hangfire fetch-admie-data → admie.gr → parser → repository. Owner: not set.</p></details></div>
+  <div class="why"><span class="draft">Draft - needs owner review</span>
+   <p class="lead">Per-slot buy and sell capacity for one portfolio, from the optimizer's DAM schedule.</p>
+   <details class="mini"><summary>Context and owner</summary><p class="cap">Callers are legacy only. Owner: not set.</p></details></div>
+  <pre class="code"><span class="k">[assembly: Feature]</span>(name, Why, Context, Owner)
+// same attribute as A; only the rendering differs</pre>
+ </label>
+</div>
+<div class="esc"><label><input type="radio" name="q2" value="changes">Changes needed (note)</label><label><input type="radio" name="q2" value="redraw">None, redraw</label></div>
+<textarea id="q2-note" aria-label="Q2 note" placeholder="Note for Q2: corrections to the drafted Why and Context go here"></textarea>
+</section>
+
+<!-- Q3 -->
+<section class="blk" data-q="q3">
+<h2>Q3 · Diagrams per feature</h2>
+<p class="legend"><span class="chip"><span class="sw" style="background:var(--pass)"></span>passed</span><span class="chip"><span class="sw" style="background:var(--skip)"></span>skipped</span><span class="chip"><span class="sw" style="background:var(--fail)"></span>failed</span><span class="chip"><span class="sw empty"></span>no test</span></p>
+
+<div class="feat"><h3>ADMIE settlement import</h3><div class="dgrid">
+ <div class="dpanel"><strong>Use cases</strong> <span class="cap">from proposed [UseCase]</span>
+<pre class="mermaid">
+flowchart LR
+  sch["Scheduler: fetch-admie-data"]:::actor
+  adm["admie.gr ISP results file"]:::actor
+  u1(["Import a new ISP results file"]):::pass
+  u2(["Skip a file already imported"]):::pass
+  u3(["Store a zero file as 96 zero slots"]):::pass
+  u4(["Read Athens time as UTC across DST"]):::pass
+  u5(["Reject a file with no storage unit section"]):::pass
+  sch --- u1
+  sch --- u2
+  sch --- u3
+  adm --- u4
+  adm --- u5
+  classDef actor fill:#e8edf2,stroke:#556372,color:#17212b
+  classDef pass fill:#1d7348,stroke:#1d7348,color:#ffffff
+</pre>
+<pre class="code"><span class="k">[UseCase]</span>("Skip a file already imported", Actor = "Scheduler")
+[Fact] public async Task FetchAllAsync_WhenRunTwice_SkipsTheIngestedFile()</pre></div>
+ <div class="dpanel"><strong>Flow steps</strong> <span class="cap">from existing [Flow]</span>
+<pre class="mermaid">
+flowchart TB
+  s1["1 AdmieDataFetchJob.FetchAllAsync"]:::pass
+  s2["2 AdmieIspResultsParser.ParseStorageUnitRows"]:::pass
+  s3["3 AdmieRepository: GetPortfolios, IsFileEntryIngested, InsertFileEntry"]:::pass
+  s1 --> s2
+  s2 --> s3
+  classDef pass fill:#1d7348,stroke:#1d7348,color:#ffffff
+</pre>
+<pre class="code"><span class="k">[Flow]</span>("ADMIE settlement import", step: 2)
+public class AdmieIspResultsParserTests</pre></div>
+ <div class="dpanel wide"><strong>Sequence</strong> <span class="illu">Illustrative</span> <span class="cap">Phase 4 recorded calls</span>
+<pre class="mermaid">
+sequenceDiagram
+  participant H as Hangfire
+  participant J as AdmieDataFetchJob
+  participant S as AdmieService
+  participant A as admie.gr
+  participant P as Parser
+  participant R as AdmieRepository
+  H->>J: FetchAllAsync
+  J->>S: FetchIspResults
+  S->>R: GetPortfolios
+  S->>A: download ISP file
+  S->>R: IsFileEntryIngested
+  rect rgba(29,115,72,0.18)
+  S->>P: ParseStorageUnitRows - pass
+  S->>R: InsertFileEntry - pass
+  end
+</pre>
+<pre class="code">// no attribute: the fixture records calls on the faked
+// ADMIE client and repositories (AC-16 "recorded calls")</pre></div>
+</div></div>
+
+<div class="feat"><h3>Battery availability</h3><div class="dgrid">
+ <div class="dpanel"><strong>Use cases</strong> <span class="cap">from proposed [UseCase]</span>
+<pre class="mermaid">
+flowchart LR
+  c1["Signed-in API caller"]:::actor
+  c2["Anonymous caller"]:::actor
+  c3["DeclarationsService, legacy"]:::actor
+  b1(["Get buy and sell capacity per slot"]):::skip
+  b2(["Get 404 for an unknown portfolio"]):::pass
+  b3(["Get slot entries with a valid structure"]):::pass
+  b4(["Be refused with 401"]):::pass
+  b5(["Fill AvailableBuy and AvailableSell rows"]):::empty
+  c1 --- b1
+  c1 --- b2
+  c1 --- b3
+  c2 --- b4
+  c3 --- b5
+  classDef actor fill:#e8edf2,stroke:#556372,color:#17212b
+  classDef pass fill:#1d7348,stroke:#1d7348,color:#ffffff
+  classDef skip fill:#6b7785,stroke:#6b7785,color:#ffffff
+  classDef empty fill:#ffffff,stroke:#6b7785,stroke-dasharray:4 3,color:#17212b
+</pre>
+<pre class="code"><span class="k">[UseCase]</span>("Get buy and sell capacity per slot", Actor = "Signed-in API caller")
+[Fact(Skip = "...")] public async Task BatteryAvailability_WithAuth_ExistingPortfolio_Returns200WithValidShape()</pre></div>
+ <div class="dpanel"><strong>Flow steps</strong> <span class="cap">no [Flow] on these tests</span>
+<pre class="mermaid">
+flowchart TB
+  n["Not part of any flow"]:::empty
+  classDef empty fill:#ffffff,stroke:#6b7785,stroke-dasharray:4 3,color:#17212b
+</pre>
+<pre class="code">// empty state: shown as one dashed box.
+// owner: does this belong to a flow, or is it legacy?</pre></div>
+ <div class="dpanel wide"><strong>Sequence</strong> <span class="illu">Illustrative</span> <span class="cap">Phase 4 recorded calls</span>
+<pre class="mermaid">
+sequenceDiagram
+  participant C as Caller
+  participant AC as AccountController
+  participant AS as AccountService
+  participant O as OptimizationService
+  C->>AC: GET battery-availability
+  AC->>AS: GetBatteryAvailability, Resolution unset
+  AS->>O: GetDamScheduleAsync
+  O-->>AS: DAM schedule
+  rect rgba(107,119,133,0.22)
+  AS->>AS: ToBatteryAvailability 0 min
+  AS-->>C: 500 divide by zero - skipped
+  end
+</pre>
+<pre class="code">// AccountController.cs:48-53 never sets Resolution;
+// recorded calls would show where the run stopped</pre></div>
+</div></div>
+
+<div class="opts">
+ <label class="opt"><span class="ol"><input type="radio" name="q3" value="A"><span class="lt">A</span>All three inside each feature, sequence collapsed <span class="rec">recommended</span></span>
+  <div class="wf"><div class="on">Use cases (open)</div><div class="on">Flow steps (open)</div><div class="off">Sequence (collapsed)</div></div></label>
+ <label class="opt"><span class="ol"><input type="radio" name="q3" value="B"><span class="lt">B</span>Use cases only; flows and sequences stay top-level</span>
+  <div class="wf"><div class="on">Use cases (open)</div><div class="off">"Part of: ADMIE settlement import, step 2" link</div></div></label>
+ <label class="opt"><span class="ol"><input type="radio" name="q3" value="C"><span class="lt">C</span>All three, all collapsed behind one "Diagrams" row</span>
+  <div class="wf"><div class="off">Diagrams: use cases · flow · sequence (collapsed)</div></div></label>
+</div>
+<div class="esc"><label><input type="radio" name="q3" value="changes">Changes needed (note)</label><label><input type="radio" name="q3" value="redraw">None, redraw</label></div>
+<textarea id="q3-note" aria-label="Q3 note" placeholder="Note for Q3: wrong use case, missing actor, diagram to drop"></textarea>
+</section>
+
+<!-- Q4 -->
+<section class="blk" data-q="q4">
+<h2>Q4 · Section order inside a feature</h2>
+<div class="opts">
+ <label class="opt"><span class="ol"><input type="radio" name="q4" value="A"><span class="lt">A</span>Why → use cases → flow → sequence → scenarios <span class="rec">recommended</span></span>
+  <div class="wf"><div class="on">Header · Battery availability</div><div>Why card</div><div>Use cases</div><div>Flow steps</div><div class="off">Sequence</div><div>Scenarios · 4 rows, 1 skipped</div></div>
+  <pre class="code">ReportOptions.FeatureOrder = Why, UseCases, Flow, Sequence, Scenarios</pre></label>
+ <label class="opt"><span class="ol"><input type="radio" name="q4" value="B"><span class="lt">B</span>Why → scenarios → diagrams</span>
+  <div class="wf"><div class="on">Header · Battery availability</div><div>Why card</div><div>Scenarios · 4 rows, 1 skipped</div><div class="off">Diagrams (collapsed)</div></div>
+  <pre class="code">ReportOptions.FeatureOrder = Why, Scenarios, Diagrams</pre></label>
+ <label class="opt"><span class="ol"><input type="radio" name="q4" value="C"><span class="lt">C</span>Desktop: scenarios left, Why and diagrams in a right rail; phone stacks as B</span>
+  <div class="wf"><div class="on">Header · Battery availability</div><div class="wf2"><div><div>Scenarios · 4 rows</div></div><div><div>Why card</div><div>Use cases</div><div class="off">Flow · Sequence</div></div></div></div>
+  <pre class="code">ReportOptions.FeatureLayout = SideRail  // ≥1024px</pre></label>
+</div>
+<div class="esc"><label><input type="radio" name="q4" value="changes">Changes needed (note)</label><label><input type="radio" name="q4" value="redraw">None, redraw</label></div>
+<textarea id="q4-note" aria-label="Q4 note" placeholder="Note for Q4"></textarea>
+</section>
+</main>
+
+<div class="toolbar"><span class="prog" id="prog">0 of 4 answered</span><button type="button" id="copy">Copy answers</button><span class="prog" id="copied" aria-live="polite"></span></div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+<script>
+(function(){
+  var KEY='testdoc1-feature-docs-mockup', QS=['q1','q2','q3','q4'];
+  var TITLES={q1:'Feature header',q2:'Why card',q3:'Diagrams per feature',q4:'Section order'};
+  function load(){try{return JSON.parse(localStorage.getItem(KEY))||{};}catch(e){return {};}}
+  function save(s){try{localStorage.setItem(KEY,JSON.stringify(s));}catch(e){}}
+  var state=load();
+  function progress(){var n=QS.filter(function(q){return state[q]&&state[q].choice;}).length;document.getElementById('prog').textContent=n+' of 4 answered';}
+  QS.forEach(function(q){
+    var s=state[q]||{};
+    document.querySelectorAll('input[name="'+q+'"]').forEach(function(r){
+      if(r.value===s.choice) r.checked=true;
+      r.addEventListener('change',function(){state[q]=state[q]||{};state[q].choice=r.value;save(state);progress();});
+    });
+    var t=document.getElementById(q+'-note');
+    t.value=s.note||'';
+    t.addEventListener('input',function(){state[q]=state[q]||{};state[q].note=t.value;save(state);});
+  });
+  progress();
+  function text(){
+    var out=['## TESTDOC-1 "Tests draw the docs" feature-docs mockup answers'];
+    QS.forEach(function(q){var s=state[q]||{};out.push('- '+q.toUpperCase()+' '+TITLES[q]+': '+(s.choice||'unanswered')+(s.note?' | note: '+s.note.replace(/\n/g,' '):''));});
+    return out.join('\n');
+  }
+  document.getElementById('copy').addEventListener('click',function(){
+    var t=text(),msg=document.getElementById('copied');
+    function fallback(){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');msg.textContent='Copied';}catch(e){msg.textContent='Copy failed';}a.remove();}
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(function(){msg.textContent='Copied';},fallback);}else fallback();
+  });
+  if(window.mermaid){
+    var dark=document.documentElement.dataset.theme==='dark'||(document.documentElement.dataset.theme!=='light'&&window.matchMedia('(prefers-color-scheme: dark)').matches);
+    mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:dark?'dark':'neutral',flowchart:{useMaxWidth:true},sequence:{useMaxWidth:true}});
+    mermaid.run({querySelector:'pre.mermaid'});
+  }
+})();
+</script>
+</body>
+</html>
