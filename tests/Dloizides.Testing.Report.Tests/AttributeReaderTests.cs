@@ -252,4 +252,43 @@ public class AttributeReaderTests
 
         Assert.Equal(expected, read.Problems);
     }
+
+    [Fact]
+    public void AC02_WithClassAfterPreprocessorLine_FilesCoversUnderIt()
+    {
+        const string source = """
+            #nullable enable
+            class SubmitTests
+            {
+                [Fact]
+                [Covers("AC-01")]
+                public void Submit_WhenValid_SendsIt()
+                {
+                }
+            }
+            """;
+        string[] expected = ["AC-01"];
+
+        var read = AttributeReader.Parse(source, Path);
+
+        Assert.Equal(expected, read.Test("SubmitTests", "Submit_WhenValid_SendsIt").Covers);
+    }
+
+    [Fact]
+    public void AC18_WithMissingClosingBrace_ReportsItAtEndOfFile()
+    {
+        const string source = """
+            public class SubmitTests
+            {
+                [Fact]
+                public void Submit_WhenValid_SendsIt()
+                {
+                }
+            """;
+        AttributeProblem[] expected = [new(Path, 6, AttributeProblem.Braces, "missing }")];
+
+        var read = AttributeReader.Parse(source, Path);
+
+        Assert.Equal(expected, read.Problems);
+    }
 }

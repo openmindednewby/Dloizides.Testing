@@ -11,7 +11,7 @@ internal static partial class AttributeReader
     private const string Generic = @"(?:<[\w\s,.?<>\[\]]*>)?";
 
     private const string TypeStart =
-        @"(?<=(?:^|[;{}\]]|\b(?:public|internal|private|protected|sealed|abstract|static|partial|file|readonly|ref|unsafe|new))\s*)";
+        @"(?<=(?:(?m:^)|[;{}\]]|\b(?:public|internal|private|protected|sealed|abstract|static|partial|file|readonly|ref|unsafe|new))\s*)";
 
     private const string Token = @"(?<=[\[,]\s*)(?:global::)?(?:\w+\.)*(?<attr>Requirement|Covers|Feature|Flow)(?:Attribute)?\s*\(" + Arguments +
         @"\)|" + TypeStart + @"(?:record\s+(?:(?:class|struct)\s+)?|class\s+|struct\s+|interface\s+)(?<class>\w+)|\b(?:void|Task|ValueTask)" +

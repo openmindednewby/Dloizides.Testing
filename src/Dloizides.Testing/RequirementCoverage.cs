@@ -13,7 +13,7 @@ public static class RequirementCoverage
         var classes = TestDiscovery.LoadableTypes(assembly).Where(type => type.IsClass).ToList();
         return Sorted(classes.SelectMany(type =>
         {
-            var covered = classes.Where(other => other == type || other.IsSubclassOf(type))
+            var covered = classes.Where(other => Inherits(other, type))
                 .SelectMany(Covers).SelectMany(link => link.Ids).ToHashSet(StringComparer.Ordinal);
             return OwnIds(type).Where(id => !covered.Contains(id)).Select(id => $"{type.FullName}: {id}");
         }));
@@ -35,6 +35,15 @@ public static class RequirementCoverage
 
     private static IReadOnlyList<string> Sorted(IEnumerable<string> entries) =>
         entries.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
+
+    private static bool Inherits(Type candidate, Type type)
+    {
+        for (var current = candidate; current is not null; current = current.BaseType)
+            if (current == type || (current.IsGenericType && current.GetGenericTypeDefinition() == type))
+                return true;
+
+        return false;
+    }
 
     private static IEnumerable<string> OwnIds(Type type) =>
         type.GetCustomAttributes<RequirementAttribute>(inherit: false).Select(requirement => requirement.Id);

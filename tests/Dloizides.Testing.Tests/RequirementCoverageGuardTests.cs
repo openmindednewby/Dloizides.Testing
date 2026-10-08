@@ -74,4 +74,14 @@ public class RequirementCoverageGuardTests
 
         Assert.DoesNotContain(unexpected, uncovered);
     }
+
+    [Fact]
+    public void AC17_WithOpenGenericBaseCoveredByClosedDerivedClass_DoesNotReportIt()
+    {
+        const string unexpected = "Dloizides.Testing.Tests.Samples.GenericRequirementSample`1: AC-05";
+
+        var uncovered = RequirementCoverage.Uncovered(typeof(ClosedGenericRequirementSample).Assembly);
+
+        Assert.DoesNotContain(unexpected, uncovered);
+    }
 }

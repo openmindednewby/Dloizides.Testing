@@ -167,3 +167,16 @@ public class DerivedRequirementSample : AbstractRequirementSample
     {
     }
 }
+
+[Requirement("AC-05", "A requirement declared on an open generic base and covered by its closed derived class.")]
+public abstract class GenericRequirementSample<T>;
+
+[MethodUnderTest("Submit", "Submits the declaration to the market operator.")]
+public class ClosedGenericRequirementSample : GenericRequirementSample<int>
+{
+    [Fact]
+    [Covers("AC-05")]
+    public void Submit_WhenClosed_CoversTheOpenBase()
+    {
+    }
+}
