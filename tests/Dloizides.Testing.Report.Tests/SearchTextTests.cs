@@ -37,7 +37,18 @@ public sealed class SearchTextTests
     private static TestResult Result(string method = "M", string scenario = "", string expected = "", string message = "", string description = "", string feature = "F") =>
         new()
         {
-            Name = "N.M", Project = "P", Feature = feature, Class = "C", Method = method, Description = description,
-            Scenario = scenario, Expected = expected, Args = string.Empty, Status = TestStatus.Pass, Seconds = 0, Message = message, Stack = string.Empty,
+            Name = "N.M",
+            Project = "P",
+            Feature = feature,
+            Class = "C",
+            Method = method,
+            Description = description,
+            Scenario = scenario,
+            Expected = expected,
+            Args = string.Empty,
+            Status = TestStatus.Pass,
+            Seconds = 0,
+            Message = message,
+            Stack = string.Empty,
         };
 }
