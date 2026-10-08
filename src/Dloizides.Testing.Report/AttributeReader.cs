@@ -5,14 +5,28 @@ namespace Dloizides.Testing.Report;
 internal static partial class AttributeReader
 {
     private const string Arguments = """
-        (?<args>(?:"(?:[^"\\]|\\.)*"|[^()"]|\([^()]*\))*)
+        (?<args>(?:"(?:[^"\\]|\\.)*"|[^()"]|(?<open>\()|(?<-open>\)))*(?(open)(?!)))
         """;
 
-    private const string Token = @"(?<=[\[,]\s*)(?<attr>Requirement|Covers|Feature|Flow)(?:Attribute)?\s*\(" + Arguments +
-        @"\)|\bclass\s+(?<class>\w+)|\b(?:void|Task|ValueTask)\s+(?<method>\w+)\s*\(";
+    private const string Generic = @"(?:<[\w\s,.?<>\[\]]*>)?";
+
+    private const string Skipped = """
+        "{3,}[\s\S]*?"{3,}|@"(?:[^"]|"")*"|"(?:[^"\\\r\n]|\\.)*"|'(?:[^'\\\r\n]|\\.)'|//[^\n]*|/\*[\s\S]*?\*/
+        """;
+
+    private const string Token = @"(?<=[\[,]\s*)(?:global::)?(?:\w+\.)*(?<attr>Requirement|Covers|Feature|Flow)(?:Attribute)?\s*\(" + Arguments +
+        @"\)|\bclass\s+(?<class>\w+)|\b(?:void|Task|ValueTask)" + Generic + @"\s+(?<method>\w+)\s*" + Generic + @"\s*\(|" +
+        Skipped + "|[{};]";
 
     private const string StepName = "step";
+    private const string IdName = "id";
+    private const string TextName = "text";
+    private const string NameName = "name";
+    private const int FirstPosition = 0;
     private const int StepPosition = 1;
+    private const int TextPosition = 1;
+    private const int OneArgument = 1;
+    private const int TwoArguments = 2;
 
     public static SourceAttributes ReadDirectories(IEnumerable<string> roots)
     {
@@ -33,7 +47,7 @@ internal static partial class AttributeReader
     private static void Collect(string source, string path, SourceAttributes read)
     {
         var pending = new List<Match>();
-        var currentClass = string.Empty;
+        var scope = new ClassScope();
         foreach (Match match in TokenPattern().Matches(source))
         {
             if (match.Groups["attr"].Success)
@@ -42,15 +56,32 @@ internal static partial class AttributeReader
                 continue;
             }
 
-            var isClass = match.Groups["class"].Success;
-            if (isClass)
-                currentClass = match.Groups["class"].Value;
-            var key = isClass ? currentClass : MethodDescriptionReader.Key(currentClass, match.Groups["method"].Value);
-            var target = Target(isClass ? read.Classes : read.Methods, key);
-            foreach (var attribute in pending)
-                Apply(new Declaration(source, path, attribute, currentClass), read, target);
-            pending.Clear();
+            if (match.Groups["class"].Success)
+            {
+                var className = match.Groups["class"].Value;
+                scope.Declare(className);
+                Flush(pending, new Declared(source, path, className), read, Target(read.Classes, className));
+                continue;
+            }
+
+            if (match.Groups["method"].Success)
+            {
+                var key = MethodDescriptionReader.Key(scope.Current, match.Groups["method"].Value);
+                Flush(pending, new Declared(source, path, scope.Current), read, Target(read.Methods, key));
+                continue;
+            }
+
+            scope.Step(match.Value);
+            if (match.Value is "{" or ";")
+                pending.Clear();
         }
+    }
+
+    private static void Flush(List<Match> pending, Declared owner, SourceAttributes read, AttributeSet target)
+    {
+        foreach (var attribute in pending)
+            Apply(new Declaration(owner.Source, owner.Path, attribute, owner.Class), read, target);
+        pending.Clear();
     }
 
     private static AttributeSet Target(Dictionary<string, AttributeSet> sets, string key)
@@ -77,21 +108,24 @@ internal static partial class AttributeReader
 
     private static void ApplyComplete(Declaration declaration, IReadOnlyList<Argument> arguments, SourceAttributes read, AttributeSet target)
     {
-        var texts = arguments.Where(argument => argument.Text is not null).Select(argument => argument.Text!).ToList();
-        var step = arguments.Select(argument => argument.Number).FirstOrDefault(number => number is not null);
+        var first = Bound(arguments, declaration.Name == "Requirement" ? IdName : NameName, FirstPosition);
         switch (declaration.Name)
         {
-            case "Requirement" when texts.Count == 2:
-                read.Requirements.Add(new RequirementRecord(texts[0], texts[1], declaration.Path, declaration.Class));
+            case "Requirement" when arguments.Count == TwoArguments && first?.Text is { } id && Bound(arguments, TextName, TextPosition)?.Text is { } text:
+                read.Requirements.Add(new RequirementRecord(id, text, declaration.Path, declaration.Class));
                 break;
-            case "Feature" when texts.Count == 1:
-                target.Feature = texts[0];
+            case "Feature" when arguments.Count == OneArgument && first?.Text is { } feature:
+                target.Feature = feature;
                 break;
-            case "Flow" when texts.Count == 1 && step is not null:
-                target.Flows.Add(new FlowEntry(texts[0], step.Value));
+            case "Flow" when arguments.Count == TwoArguments && first?.Text is { } flow && Bound(arguments, StepName, StepPosition)?.Number is { } step:
+                target.Flows.Add(new FlowEntry(flow, step));
                 break;
         }
     }
+
+    private static Argument? Bound(IReadOnlyList<Argument> arguments, string name, int position) =>
+        arguments.FirstOrDefault(argument => argument.Name == name) ??
+        arguments.FirstOrDefault(argument => argument.Name is null && argument.Position == position);
 
     private static bool IsExpected(string attribute, Argument argument)
     {
@@ -100,6 +134,8 @@ internal static partial class AttributeReader
         var isStep = attribute == "Flow" && (isNamedStep || isPositionalStep);
         return isStep ? argument.Number is not null : argument.Text is not null;
     }
+
+    private sealed record Declared(string Source, string Path, string Class);
 
     private sealed record Declaration(string Source, string Path, Match Match, string Class)
     {

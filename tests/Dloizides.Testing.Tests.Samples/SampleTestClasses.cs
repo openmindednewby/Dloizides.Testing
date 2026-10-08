@@ -131,3 +131,26 @@ public class RequirementSample
     {
     }
 }
+
+[MethodUnderTest("Submit", "Submits the declaration to the market operator.")]
+[Requirement("AC-02", "The same id RequirementSample covers, never covered in this class.")]
+public class ScopedRequirementSample
+{
+    [Fact]
+    public void Submit_WhenValid_SendsIt()
+    {
+    }
+}
+
+[Requirement("AC-03", "A declared requirement on a class with no tests.")]
+public class RequirementWithoutTestsSample;
+
+[MethodUnderTest("Submit", "Submits the declaration to the market operator.")]
+public class ForeignCoversSample
+{
+    [Fact]
+    [Covers("AC-01")]
+    public void Submit_WhenForeign_ReportsIt()
+    {
+    }
+}

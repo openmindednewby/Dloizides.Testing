@@ -108,13 +108,94 @@ public class AttributeReaderTests
                 public void Submit_WhenValid_SendsIt()
                 {
                 }
+
+                [Fact]
+                [Dloizides.Testing.Covers(Ids.Get(nameof(A)))]
+                public void Submit_WhenLate_RejectsIt()
+                {
+                }
+            }
+
+            [global::Dloizides.Testing.Requirement(Ids.Second, "Qualified.")]
+            public class OtherTests
+            {
             }
             """;
-        AttributeProblem[] expected = [new(Path, 1, "Requirement", "nameof(X)"), new(Path, 5, "Covers", "Ids.First")];
+        AttributeProblem[] expected =
+        [
+            new(Path, 1, "Requirement", "nameof(X)"),
+            new(Path, 5, "Covers", "Ids.First"),
+            new(Path, 11, "Covers", "Ids.Get(nameof(A))"),
+            new(Path, 17, "Requirement", "Ids.Second"),
+        ];
 
         var read = AttributeReader.Parse(source, Path);
 
         Assert.Equal(expected, read.Problems);
         Assert.Empty(read.Requirements);
+    }
+
+    [Fact]
+    public void AC01_WithNamedArgumentsOutOfOrder_ReadsEachByName()
+    {
+        const string source = """
+            [Requirement(text: "A", id: "AC-01")]
+            public class SubmitTests
+            {
+                [Fact]
+                [Flow(step: 3, name: "Submit")]
+                public void Submit_WhenValid_SendsIt()
+                {
+                }
+            }
+            """;
+        RequirementRecord[] expectedRequirements = [new("AC-01", "A", Path, "SubmitTests")];
+        FlowEntry[] expectedFlows = [new("Submit", 3)];
+
+        var read = AttributeReader.Parse(source, Path);
+
+        Assert.Equal(expectedRequirements, read.Requirements);
+        Assert.Equal(expectedFlows, read.Test("SubmitTests", "Submit_WhenValid_SendsIt").Flows);
+    }
+
+    [Fact]
+    public void AC02_WithNestedClassAndGenericMethod_FilesCoversUnderItsOwnMethod()
+    {
+        const string source = """
+            public class Outer
+            {
+                public class Inner
+                {
+                    [Fact]
+                    [Covers("AC-01")]
+                    public void Load_WhenStored_ReturnsIt()
+                    {
+                        var text = "}";
+                    }
+                }
+
+                [Covers("AC-09")]
+                public int Count { get; set; }
+
+                [Fact]
+                [Covers("AC-02")]
+                public void Submit_WhenValid_SendsIt<T>()
+                {
+                }
+
+                [Fact]
+                public void Submit_WhenLate_RejectsIt()
+                {
+                }
+            }
+            """;
+        string[] expectedInner = ["AC-01"];
+        string[] expectedOuter = ["AC-02"];
+
+        var read = AttributeReader.Parse(source, Path);
+
+        Assert.Equal(expectedInner, read.Test("Inner", "Load_WhenStored_ReturnsIt").Covers);
+        Assert.Equal(expectedOuter, read.Test("Outer", "Submit_WhenValid_SendsIt").Covers);
+        Assert.Empty(read.Test("Outer", "Submit_WhenLate_RejectsIt").Covers);
     }
 }

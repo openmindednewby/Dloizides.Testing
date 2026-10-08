@@ -14,7 +14,7 @@ internal static class TestDiscovery
 
     private static bool IsConcreteOrStaticClass(Type type) => type.IsClass && (!type.IsAbstract || type.IsSealed);
 
-    private static IEnumerable<Type> LoadableTypes(Assembly assembly)
+    public static IEnumerable<Type> LoadableTypes(Assembly assembly)
     {
         try
         {
