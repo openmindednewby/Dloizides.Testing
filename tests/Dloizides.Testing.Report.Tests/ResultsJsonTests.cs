@@ -5,6 +5,17 @@ namespace Dloizides.Testing.Report.Tests;
 public sealed class ResultsJsonTests : IDisposable
 {
     private const int InvalidResults = 1;
+    private const string Source = """
+        [Requirement("AC-01", "Saved items load back")]
+        public class AlphaTests
+        {
+            [Fact]
+            [Covers("AC-01")]
+            [Flow("Checkout", 2)]
+            public void Load_WhenSaved_ReturnsIt() { }
+        }
+        """;
+
     private readonly string reports = Path.Combine(Path.GetTempPath(), "test-report-json-" + Guid.NewGuid().ToString("N"));
 
     public void Dispose()
@@ -44,11 +55,22 @@ public sealed class ResultsJsonTests : IDisposable
         var options = new ReportOptions(runFolder, [], new HashSet<string>(), [], "Shop");
         var direct = new RunReader(options, new Dictionary<string, string>()).Read(runFolder);
         var directPage = RunPage.Render(direct, options.RunTitle, options.Labels);
+        var attached = RunAttributes.Attach(direct, AttributeReader.Parse(Source, "/src/Shop.Tests/AlphaTests.cs"), ["/src"]);
+        var tests = attached.Sets.Single().Tests;
+        var alpha = tests.FindIndex(t => t.Name.EndsWith("Load_WhenSaved_ReturnsIt", StringComparison.Ordinal));
+        tests[alpha] = tests[alpha] with { Calls = [new ResultsCall { Seq = 1, From = "Shop.Tests", To = "shop-api", Method = "GET", Path = "/items/1", Status = 200 }] };
+        var directJson = ResultsJsonWriter.Write(attached);
 
-        var roundTripped = ResultsJsonReader.Read(ResultsJsonWriter.Write(direct, new SourceAttributes(), []));
+        var roundTripped = ResultsJsonReader.Read(directJson);
 
+        var loaded = roundTripped.Sets.Single().Tests.Single(t => t.Name.EndsWith("Load_WhenSaved_ReturnsIt", StringComparison.Ordinal));
         Assert.Equal(direct.Sets.Select(s => new Tally(s.Tests).Text()), roundTripped.Sets.Select(s => new Tally(s.Tests).Text()));
         Assert.Equal(3, roundTripped.Sets.Single().Tests.Count);
         Assert.Equal(directPage, RunPage.Render(roundTripped, options.RunTitle, options.Labels));
+        Assert.Equal(directJson, ResultsJsonWriter.Write(roundTripped));
+        Assert.Equal(["AC-01"], loaded.Covers);
+        Assert.Equal(new FlowEntry("Checkout", 2), loaded.Flows.Single());
+        Assert.Equal("/items/1", loaded.Calls.Single().Path);
+        Assert.Equal(("AC-01", "Shop.Tests/AlphaTests.cs"), (roundTripped.Requirements.Single().Id, roundTripped.Requirements.Single().Source));
     }
 }

@@ -17,6 +17,11 @@
   <ItemGroup>
     <EmbeddedResource Include="Assets\report.css" LogicalName="report.css" />
     <EmbeddedResource Include="Assets\report.js" LogicalName="report.js" />
+    <EmbeddedResource Include="..\..\schema\testdoc-results.v1.schema.json" LogicalName="testdoc-results.v1.schema.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="JsonSchema.Net" Version="7.3.4" />
   </ItemGroup>
 
   <ItemGroup>

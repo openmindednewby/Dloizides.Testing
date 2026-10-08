@@ -4,13 +4,18 @@ internal sealed record RequirementRecord(string Id, string Text, string Path, st
 
 internal sealed record FlowEntry(string Name, int Step);
 
-internal sealed record AttributeProblem(string Path, int Line, string Attribute, string Argument)
+internal sealed record AttributeProblem(string Path, int Line, string Attribute, string Argument, string Reason = AttributeProblem.NotLiteral)
 {
     public const string Braces = "braces";
+    public const string NotLiteral = "not literal";
+    public const string BadId = "bad id";
 
-    public override string ToString() => Attribute == Braces
-        ? $"{Path}:{Line}: unbalanced braces ({Argument}), so attributes after this line may be filed under the wrong class"
-        : $"{Path}:{Line}: [{Attribute}] argument {Argument} is not a literal, so the report cannot read it";
+    public override string ToString() => (Attribute, Reason) switch
+    {
+        (Braces, _) => $"{Path}:{Line}: unbalanced braces ({Argument}), so attributes after this line may be filed under the wrong class",
+        (_, BadId) => $"{Path}:{Line}: [{Attribute}] id \"{Argument}\" breaks the id grammar {IdGrammar.Pattern}, so the report cannot link it",
+        _ => $"{Path}:{Line}: [{Attribute}] argument {Argument} is not a literal, so the report cannot read it",
+    };
 }
 
 internal sealed record TestAttributes(IReadOnlyList<string> Covers, string? Feature, IReadOnlyList<FlowEntry> Flows);

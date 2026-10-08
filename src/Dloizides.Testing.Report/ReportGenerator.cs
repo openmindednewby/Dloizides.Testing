@@ -11,12 +11,9 @@ internal static class ReportGenerator
         var reader = new RunReader(options, MethodDescriptionReader.ReadDirectories(options.SourceRoots));
         var runPath = Path.TrimEndingDirectorySeparator(Path.GetFullPath(options.RunFolder));
         var reports = Path.GetDirectoryName(runPath) ?? runPath;
-        var run = options.ResultsFile is { } results ? FromJson(results, runPath) : reader.Read(runPath);
+        var run = options.ResultsFile is { } results ? FromJson(results, runPath) : FromTrx(reader, runPath, options);
         if (options.ResultsFile is null)
-        {
-            var attributes = AttributeReader.ReadDirectories(options.SourceRoots);
-            File.WriteAllText(Path.Combine(runPath, ResultsJson.FileName), ResultsJsonWriter.Write(run, attributes, options.SourceRoots), Utf8NoBom);
-        }
+            File.WriteAllText(Path.Combine(runPath, ResultsJson.FileName), ResultsJsonWriter.Write(run), Utf8NoBom);
 
         var runIndex = Path.Combine(runPath, "index.html");
         File.WriteAllText(runIndex, RunPage.Render(run, options.RunTitle, options.Labels), Utf8NoBom);
@@ -31,6 +28,9 @@ internal static class ReportGenerator
             File.WriteAllText(Path.Combine(reports, "latest.html"), IndexPage.Latest(runs[0].Name, options.RunTitle), Utf8NoBom);
         return runIndex;
     }
+
+    private static TestRun FromTrx(RunReader reader, string runPath, ReportOptions options) =>
+        RunAttributes.Attach(reader.Read(runPath), AttributeReader.ReadDirectories(options.SourceRoots), options.SourceRoots);
 
     private static TestRun FromJson(string resultsFile, string runPath)
     {

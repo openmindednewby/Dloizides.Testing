@@ -114,7 +114,9 @@ internal static partial class AttributeReader
         read.Problems.AddRange(problems.Select(argument => declaration.Problem(argument.Raw)));
         if (declaration.Name == "Covers")
         {
-            target.Covers.AddRange(arguments.Except(problems).Select(argument => argument.Text!));
+            var ids = arguments.Except(problems).Select(argument => argument.Text!).ToList();
+            read.Problems.AddRange(ids.Where(id => !IdGrammar.IsValid(id)).Select(id => declaration.Problem(id, AttributeProblem.BadId)));
+            target.Covers.AddRange(ids.Where(IdGrammar.IsValid));
             return;
         }
 
@@ -128,7 +130,10 @@ internal static partial class AttributeReader
         switch (declaration.Name)
         {
             case "Requirement" when arguments.Count == TwoArguments && first?.Text is { } id && Bound(arguments, TextName, TextPosition)?.Text is { } text:
-                read.Requirements.Add(new RequirementRecord(id, text, declaration.Path, declaration.Class));
+                if (IdGrammar.IsValid(id))
+                    read.Requirements.Add(new RequirementRecord(id, text, declaration.Path, declaration.Class));
+                else
+                    read.Problems.Add(declaration.Problem(id, AttributeProblem.BadId));
                 break;
             case "Feature" when arguments.Count == OneArgument && first?.Text is { } feature:
                 target.Feature = feature;
@@ -159,8 +164,8 @@ internal static partial class AttributeReader
 
         public string Arguments => Source.Substring(Match.Groups["args"].Index, Match.Groups["args"].Length);
 
-        public AttributeProblem Problem(string argument) =>
-            new(Path, LineAt(Source, Match.Index), Name, argument);
+        public AttributeProblem Problem(string argument, string reason = AttributeProblem.NotLiteral) =>
+            new(Path, LineAt(Source, Match.Index), Name, argument, reason);
     }
 
     [GeneratedRegex(Token)]

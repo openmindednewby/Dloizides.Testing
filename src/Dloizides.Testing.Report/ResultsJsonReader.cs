@@ -1,5 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
+using System.Text.Json.Nodes;
+using Json.Schema;
 
 namespace Dloizides.Testing.Report;
 
@@ -7,69 +9,93 @@ internal static class ResultsJsonReader
 {
     private const string SchemaField = "schema";
     private const string Root = "(root)";
+    private const string Document = "(document)";
+    private const string SchemaResource = "testdoc-results.v1.schema.json";
+    private const string JsonPathPrefix = "$.";
+
+    private static readonly Lazy<JsonSchema> Contract = new(LoadContract);
 
     public static TestRun Read(string json)
     {
-        using var parsed = Parse(json);
-        var root = parsed.RootElement;
-        if (root.ValueKind != JsonValueKind.Object)
+        var root = Parse(json);
+        if (root is not JsonObject document)
             throw new ResultsJsonException(Root, "must be a JSON object");
-        CheckSchema(root);
-        var run = Required(root, "run", JsonValueKind.Object, "run");
-        Required(run, "name", JsonValueKind.String, "run.name");
-        Required(root, "requirements", JsonValueKind.Array, "requirements");
-        var tests = Required(root, "tests", JsonValueKind.Array, "tests");
-        var index = 0;
-        foreach (var test in tests.EnumerateArray())
-            CheckTest(test, $"tests[{index++}]");
-
-        var document = root.Deserialize<ResultsDocument>(ResultsJson.Options)
-            ?? throw new ResultsJsonException(Root, "could not be read");
-        return ToRun(document);
+        CheckSchema(document);
+        CheckContract(document);
+        return ToRun(Deserialize(document));
     }
 
-    private static JsonDocument Parse(string json)
+    private static JsonNode? Parse(string json)
     {
         try
         {
-            return JsonDocument.Parse(json);
+            return JsonNode.Parse(json);
         }
         catch (JsonException exception)
         {
-            throw new ResultsJsonException("(document)", $"is not valid JSON: {exception.Message}");
+            throw new ResultsJsonException(Document, $"is not valid JSON: {exception.Message}");
         }
     }
 
-    private static void CheckSchema(JsonElement root)
+    private static void CheckSchema(JsonObject root)
     {
-        if (!root.TryGetProperty(SchemaField, out var schema) || schema.ValueKind != JsonValueKind.String)
+        if (!root.TryGetPropertyValue(SchemaField, out var schema) || schema is not JsonValue value || !value.TryGetValue<string>(out var text))
             throw new ResultsJsonException(SchemaField, "is missing");
-        var value = schema.GetString() ?? string.Empty;
-        var rest = value.StartsWith(ResultsJson.SchemaPrefix, StringComparison.Ordinal) ? value[ResultsJson.SchemaPrefix.Length..] : string.Empty;
+        var rest = text.StartsWith(ResultsJson.SchemaPrefix, StringComparison.Ordinal) ? text[ResultsJson.SchemaPrefix.Length..] : string.Empty;
         var dot = rest.IndexOf('.', StringComparison.Ordinal);
         var major = dot >= 0 ? rest[..dot] : rest;
         if (major != ResultsJson.SupportedMajor)
-            throw new ResultsJsonException(SchemaField, $"has unknown major version \"{value}\"; this reader understands {ResultsJson.SchemaName}");
+            throw new ResultsJsonException(SchemaField, $"has unknown major version \"{text}\"; this reader understands {ResultsJson.SchemaName}");
     }
 
-    private static void CheckTest(JsonElement test, string path)
+    private static void CheckContract(JsonObject root)
     {
-        if (test.ValueKind != JsonValueKind.Object)
-            throw new ResultsJsonException(path, "must be an object");
-        Required(test, "id", JsonValueKind.String, $"{path}.id");
-        Required(test, "set", JsonValueKind.String, $"{path}.set");
-        var status = Required(test, "status", JsonValueKind.String, $"{path}.status").GetString() ?? string.Empty;
-        if (!ResultsJson.TryStatus(status, out _))
-            throw new ResultsJsonException($"{path}.status", $"has unknown value \"{status}\"; expected pass, fail, skip, xfail or xpass");
+        var options = new EvaluationOptions { OutputFormat = OutputFormat.List, RequireFormatValidation = true };
+        var result = Contract.Value.Evaluate(root, options);
+        if (result.IsValid)
+            return;
+        var failure = new[] { result }.Concat(result.Details)
+            .Where(detail => detail.HasErrors)
+            .OrderByDescending(detail => Segments(detail.InstanceLocation.ToString()).Length)
+            .First();
+        var problems = string.Join("; ", failure.Errors!.Values);
+        throw new ResultsJsonException(FieldName(failure.InstanceLocation.ToString()), $"breaks the schema: {problems}");
     }
 
-    private static JsonElement Required(JsonElement parent, string name, JsonValueKind kind, string path)
+    private static ResultsDocument Deserialize(JsonObject root)
     {
-        if (!parent.TryGetProperty(name, out var value))
-            throw new ResultsJsonException(path, "is missing");
-        if (value.ValueKind != kind)
-            throw new ResultsJsonException(path, $"must be {kind.ToString().ToLowerInvariant()}, got {value.ValueKind.ToString().ToLowerInvariant()}");
-        return value;
+        try
+        {
+            return root.Deserialize<ResultsDocument>(ResultsJson.Options) ?? throw new ResultsJsonException(Root, "could not be read");
+        }
+        catch (JsonException exception)
+        {
+            var path = exception.Path is { Length: > 0 } jsonPath ? jsonPath.Replace(JsonPathPrefix, string.Empty, StringComparison.Ordinal) : Document;
+            throw new ResultsJsonException(path, $"could not be read: {exception.Message}");
+        }
+    }
+
+    private static string FieldName(string pointer)
+    {
+        var segments = Segments(pointer);
+        if (segments.Length == 0)
+            return Root;
+        return string.Concat(segments.Select((segment, index) => IsIndex(segment) ? $"[{segment}]" : (index == 0 ? segment : "." + segment)));
+    }
+
+    private static string[] Segments(string pointer) =>
+        pointer.Split('/', StringSplitOptions.RemoveEmptyEntries)
+            .Select(segment => segment.Replace("~1", "/", StringComparison.Ordinal).Replace("~0", "~", StringComparison.Ordinal))
+            .ToArray();
+
+    private static bool IsIndex(string segment) => int.TryParse(segment, NumberStyles.None, CultureInfo.InvariantCulture, out _);
+
+    private static JsonSchema LoadContract()
+    {
+        using var stream = typeof(ResultsJsonReader).Assembly.GetManifestResourceStream(SchemaResource)
+            ?? throw new InvalidOperationException($"Embedded schema {SchemaResource} is missing.");
+        using var reader = new StreamReader(stream);
+        return JsonSchema.FromText(reader.ReadToEnd());
     }
 
     private static TestRun ToRun(ResultsDocument document)
@@ -95,8 +121,15 @@ internal static class ResultsJsonReader
             set.Tests.Add(ToResult(test));
         }
 
-        var name = document.Run.Name;
-        return new TestRun(name, RunDates.Parse(name), sets, Seconds(document.Run), document.Run.SetFilter);
+        var run = document.Run;
+        return new TestRun(run.Name, RunDates.Parse(run.Name), sets, Seconds(run), run.SetFilter)
+        {
+            Requirements = document.Requirements,
+            Repo = run.Repo,
+            Sha = run.Sha,
+            StartedAt = run.StartedAt,
+            FinishedAt = run.FinishedAt,
+        };
     }
 
     private static double Seconds(ResultsRun run)
@@ -114,6 +147,7 @@ internal static class ResultsJsonReader
         return new TestResult
         {
             Name = test.Id,
+            Framework = test.Framework,
             Project = test.Project,
             Feature = test.Feature,
             Class = test.Class,
@@ -122,6 +156,9 @@ internal static class ResultsJsonReader
             Scenario = test.Scenario,
             Expected = test.Expected,
             Args = test.Args,
+            Covers = test.Covers,
+            Flows = test.Flows.Select(f => new FlowEntry(f.Name, f.Step)).ToList(),
+            Calls = test.Calls,
             Status = status,
             Seconds = test.Seconds,
             Message = test.Message,

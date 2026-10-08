@@ -14,6 +14,8 @@ internal sealed class ResultsDocument
 internal sealed class ResultsRun
 {
     public string Name { get; init; } = string.Empty;
+    public string? Repo { get; init; }
+    public string? Sha { get; init; }
     public double Seconds { get; init; }
     public string? StartedAt { get; init; }
     public string? FinishedAt { get; init; }
@@ -36,7 +38,7 @@ internal sealed class ResultsFile
     public string Log { get; init; } = string.Empty;
 }
 
-internal sealed class ResultsRequirement
+internal sealed record ResultsRequirement
 {
     public string Id { get; init; } = string.Empty;
     public string Title { get; init; } = string.Empty;
@@ -49,10 +51,20 @@ internal sealed class ResultsFlow
     public int Step { get; init; }
 }
 
+internal sealed record ResultsCall
+{
+    public int Seq { get; init; }
+    public string From { get; init; } = string.Empty;
+    public string To { get; init; } = string.Empty;
+    public string? Method { get; init; }
+    public string? Path { get; init; }
+    public int? Status { get; init; }
+}
+
 internal sealed class ResultsTest
 {
     public string Id { get; init; } = string.Empty;
-    public string Framework { get; init; } = ResultsJson.TrxFramework;
+    public string Framework { get; init; } = ResultsJson.DefaultFramework;
     public string Project { get; init; } = string.Empty;
     public string Set { get; init; } = string.Empty;
     public bool ExpectRed { get; init; }
@@ -69,6 +81,7 @@ internal sealed class ResultsTest
     public double Seconds { get; init; }
     public string Message { get; init; } = string.Empty;
     public string Stack { get; init; } = string.Empty;
+    public IReadOnlyList<ResultsCall> Calls { get; init; } = [];
 }
 
 internal sealed class ResultsJsonException(string field, string problem) : Exception($"testdoc-results: field \"{field}\" {problem}");
@@ -79,12 +92,11 @@ internal static class ResultsJson
     public const string SchemaPrefix = "testdoc-results.v";
     public const string SupportedMajor = "1";
     public const string FileName = "testdoc-results.v1.json";
-    public const string TrxFramework = "trx";
+    public const string DefaultFramework = "xunit";
 
     public static readonly JsonSerializerOptions Options = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        PropertyNameCaseInsensitive = true,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         WriteIndented = true,
     };

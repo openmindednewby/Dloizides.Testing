@@ -45,7 +45,7 @@ public sealed class ResultsJsonSchemaTests
     }
 
     [Theory]
-    [InlineData("""{"schema":"testdoc-results.v1","run":{"name":"r"},"requirements":[],"tests":[{"id":"t","framework":"trx","project":"p","set":"Unit","status":"passed"}]}""")]
+    [InlineData("""{"schema":"testdoc-results.v1","run":{"name":"r"},"requirements":[],"tests":[{"id":"t","framework":"xunit","project":"p","set":"Unit","status":"passed"}]}""")]
     [InlineData("""{"schema":"testdoc-results.v2","run":{"name":"r"},"requirements":[],"tests":[]}""")]
     [InlineData("""{"run":{"name":"r"},"requirements":[],"tests":[]}""")]
     [InlineData("""{"schema":"testdoc-results.v1","run":{"name":"r"},"requirements":[{"id":"AC-01","title":"A"}],"tests":[]}""")]
