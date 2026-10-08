@@ -97,10 +97,11 @@ internal sealed class RunPage
     {
         var first = tests[0];
         var tally = new Tally(tests);
-        var open = tally[TestStatus.Fail] + tally[TestStatus.XPass] > 0 ? " open" : string.Empty;
+        var classes = string.Join(", ", tests.Select(t => t.Class).Distinct(StringComparer.Ordinal).Order(Ordering));
         var projectTag = multiProject ? $"<span class=\"proj\">{E(ProjectLabel(first.Project))}</span>" : string.Empty;
         var rows = MethodRows(tests);
-        return $"<details class=\"feat\"{open}><summary><span class=\"fname\">{E(first.Feature)}</span>{projectTag}"
+        return $"<details class=\"feat\"><summary><span class=\"fname\">{E(first.Feature)}</span>"
+            + $"<span class=\"fsep\" aria-hidden=\"true\"> · </span><span class=\"fcls\">{E(classes)}</span>{projectTag}"
             + $"<span class=\"fcount\">{E(tally.Text())}</span>{Html.TallyBar(tally, "small")}</summary>"
             + $"<table>{TableHead}{rows}</table></details>";
     }

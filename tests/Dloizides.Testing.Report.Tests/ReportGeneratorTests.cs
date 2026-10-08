@@ -16,7 +16,7 @@ public sealed class ReportGeneratorTests : IDisposable
     }
 
     [Fact]
-    public void Generate_WithFailingTest_ListsItFirstAndOpensItsFeature()
+    public void Generate_WithFailingTest_ListsItFirstWithItsFeatureClosed()
     {
         const string passing = "Shop.Tests.Alpha.AlphaTests.Load_WhenSaved_ReturnsIt";
         const string failing = "Shop.Tests.Beta.BetaTests.Save_WhenNew_ReturnsId";
@@ -26,8 +26,18 @@ public sealed class ReportGeneratorTests : IDisposable
 
         html.ShouldSatisfyAllConditions(
             () => html.ShouldContain($"<ol class=\"attn\"><li><a href=\"#t-1\">{failing}</a></li></ol>"),
-            () => html.ShouldContain("<details class=\"feat\" open><summary><span class=\"fname\">Beta</span>"),
+            () => html.ShouldContain("<details class=\"feat\"><summary><span class=\"fname\">Beta</span>"),
             () => html.IndexOf(">Beta<", StringComparison.Ordinal).ShouldBeLessThan(html.IndexOf(">Alpha<", StringComparison.Ordinal)));
+    }
+
+    [Fact]
+    public void Generate_WithFeatureClass_ShowsFeatureAndClassSeparatedInClosedHeading()
+    {
+        var run = WriteRun("20261007-100000", "Unit", new SampleResult("Shop.Tests.Battery.BatteryEndpointTests", "Shop.Tests.Battery.BatteryEndpointTests.Load_WhenSaved_ReturnsIt", "Passed"));
+
+        var html = File.ReadAllText(ReportGenerator.Generate(Options(run)));
+
+        html.ShouldContain("<details class=\"feat\"><summary><span class=\"fname\">Battery</span><span class=\"fsep\" aria-hidden=\"true\"> · </span><span class=\"fcls\">BatteryEndpointTests</span>");
     }
 
     [Fact]

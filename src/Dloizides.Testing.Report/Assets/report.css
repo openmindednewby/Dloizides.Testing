@@ -39,6 +39,7 @@ summary::-webkit-details-marker{display:none}
 .feat>summary::before{content:"";width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(-45deg);transition:transform .15s}
 .feat[open]>summary::before{transform:rotate(45deg)}
 .fname{font:600 1.05rem var(--f-d)}
+.fsep,.fcls{color:var(--muted);font-size:.9rem;word-break:break-word}
 .proj{color:var(--muted);font-size:.85rem}
 .fcount{margin-left:auto;color:var(--muted);font-size:.9rem}
 table{width:100%;border-collapse:collapse;font-size:.92rem;table-layout:fixed}
