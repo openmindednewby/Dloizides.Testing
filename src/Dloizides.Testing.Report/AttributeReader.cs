@@ -10,14 +10,16 @@ internal static partial class AttributeReader
 
     private const string Generic = @"(?:<[\w\s,.?<>\[\]]*>)?";
 
-    private const string Skipped = """
-        "{3,}[\s\S]*?"{3,}|@"(?:[^"]|"")*"|"(?:[^"\\\r\n]|\\.)*"|'(?:[^'\\\r\n]|\\.)'|//[^\n]*|/\*[\s\S]*?\*/
-        """;
+    private const string TypeStart =
+        @"(?<=(?:^|[;{}\]]|\b(?:public|internal|private|protected|sealed|abstract|static|partial|file|readonly|ref|unsafe|new))\s*)";
 
     private const string Token = @"(?<=[\[,]\s*)(?:global::)?(?:\w+\.)*(?<attr>Requirement|Covers|Feature|Flow)(?:Attribute)?\s*\(" + Arguments +
-        @"\)|\bclass\s+(?<class>\w+)|\b(?:void|Task|ValueTask)" + Generic + @"\s+(?<method>\w+)\s*" + Generic + @"\s*\(|" +
-        Skipped + "|[{};]";
+        @"\)|" + TypeStart + @"(?:record\s+(?:(?:class|struct)\s+)?|class\s+|struct\s+|interface\s+)(?<class>\w+)|\b(?:void|Task|ValueTask)" +
+        Generic + @"\s+(?<method>\w+)\s*" + Generic + @"\s*\(|[{};]";
 
+    private const string ExtraBrace = "extra }";
+    private const string MissingBrace = "missing }";
+    private const char NewLine = (char)0x0A;
     private const string StepName = "step";
     private const string IdName = "id";
     private const string TextName = "text";
@@ -48,7 +50,8 @@ internal static partial class AttributeReader
     {
         var pending = new List<Match>();
         var scope = new ClassScope();
-        foreach (Match match in TokenPattern().Matches(source))
+        var braceReported = false;
+        foreach (Match match in TokenPattern().Matches(SourceMask.Apply(source)))
         {
             if (match.Groups["attr"].Success)
             {
@@ -74,8 +77,21 @@ internal static partial class AttributeReader
             scope.Step(match.Value);
             if (match.Value is "{" or ";")
                 pending.Clear();
+            if (scope.Depth < 0 && !braceReported)
+                braceReported = AddBraceProblem(read, new Declared(source, path, scope.Current), match.Index, ExtraBrace);
         }
+
+        if (scope.Depth > 0 && !braceReported)
+            AddBraceProblem(read, new Declared(source, path, scope.Current), source.Length, MissingBrace);
     }
+
+    private static bool AddBraceProblem(SourceAttributes read, Declared owner, int index, string problem)
+    {
+        read.Problems.Add(new AttributeProblem(owner.Path, LineAt(owner.Source, index), AttributeProblem.Braces, problem));
+        return true;
+    }
+
+    private static int LineAt(string source, int index) => source[..index].Count(c => c == NewLine) + 1;
 
     private static void Flush(List<Match> pending, Declared owner, SourceAttributes read, AttributeSet target)
     {
@@ -93,7 +109,7 @@ internal static partial class AttributeReader
 
     private static void Apply(Declaration declaration, SourceAttributes read, AttributeSet target)
     {
-        var arguments = ArgumentSplitter.Split(declaration.Match.Groups["args"].Value);
+        var arguments = ArgumentSplitter.Split(declaration.Arguments);
         var problems = arguments.Where(argument => !IsExpected(declaration.Name, argument)).ToList();
         read.Problems.AddRange(problems.Select(argument => declaration.Problem(argument.Raw)));
         if (declaration.Name == "Covers")
@@ -141,8 +157,10 @@ internal static partial class AttributeReader
     {
         public string Name => Match.Groups["attr"].Value;
 
+        public string Arguments => Source.Substring(Match.Groups["args"].Index, Match.Groups["args"].Length);
+
         public AttributeProblem Problem(string argument) =>
-            new(Path, Source[..Match.Index].Count(c => c == '\n') + 1, Name, argument);
+            new(Path, LineAt(Source, Match.Index), Name, argument);
     }
 
     [GeneratedRegex(Token)]

@@ -198,4 +198,58 @@ public class AttributeReaderTests
         Assert.Equal(expectedOuter, read.Test("Outer", "Submit_WhenValid_SendsIt").Covers);
         Assert.Empty(read.Test("Outer", "Submit_WhenLate_RejectsIt").Covers);
     }
+
+    [Fact]
+    public void AC02_WithInterpolatedBracesConstraintsAndRecords_FilesCoversUnderItsOwnMethod()
+    {
+        const string source = """
+            public class Outer<T, U> where T : class where U : new()
+            {
+                public record Inner(int Id)
+                {
+                    public string Text => $"{(Id > 0 ? "}" : "")}{'"'}";
+                }
+
+                public readonly record struct Point(int X);
+
+                [Fact]
+                [Covers("AC-01")]
+                public void Submit_WhenValid_SendsIt()
+                {
+                    var multi = @$"line {{ one
+                        {Format("}")} two";
+                }
+
+                [Fact]
+                [Covers("AC-02")]
+                public void Submit_WhenLate_RejectsIt()
+                {
+                }
+            }
+            """;
+        string[] expectedValid = ["AC-01"];
+        string[] expectedLate = ["AC-02"];
+
+        var read = AttributeReader.Parse(source, Path);
+
+        Assert.Equal(expectedValid, read.Test("Outer", "Submit_WhenValid_SendsIt").Covers);
+        Assert.Equal(expectedLate, read.Test("Outer", "Submit_WhenLate_RejectsIt").Covers);
+        Assert.Empty(read.Problems);
+    }
+
+    [Fact]
+    public void AC18_WithUnbalancedClosingBrace_ReportsItWithFileAndLine()
+    {
+        const string source = """
+            public class SubmitTests
+            {
+            }
+            }
+            """;
+        AttributeProblem[] expected = [new(Path, 4, AttributeProblem.Braces, "extra }")];
+
+        var read = AttributeReader.Parse(source, Path);
+
+        Assert.Equal(expected, read.Problems);
+    }
 }

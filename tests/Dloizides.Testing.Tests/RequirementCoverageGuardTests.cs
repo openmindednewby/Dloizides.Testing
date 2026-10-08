@@ -64,4 +64,14 @@ public class RequirementCoverageGuardTests
 
         Assert.Contains(expected, undeclared);
     }
+
+    [Fact]
+    public void AC17_WithAbstractBaseCoveredByDerivedClass_DoesNotReportIt()
+    {
+        const string unexpected = "Dloizides.Testing.Tests.Samples.AbstractRequirementSample: AC-04";
+
+        var uncovered = RequirementCoverage.Uncovered(typeof(AbstractRequirementSample).Assembly);
+
+        Assert.DoesNotContain(unexpected, uncovered);
+    }
 }

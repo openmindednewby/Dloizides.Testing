@@ -6,7 +6,11 @@ internal sealed record FlowEntry(string Name, int Step);
 
 internal sealed record AttributeProblem(string Path, int Line, string Attribute, string Argument)
 {
-    public override string ToString() => $"{Path}:{Line}: [{Attribute}] argument {Argument} is not a literal, so the report cannot read it";
+    public const string Braces = "braces";
+
+    public override string ToString() => Attribute == Braces
+        ? $"{Path}:{Line}: unbalanced braces ({Argument}), so attributes after this line may be filed under the wrong class"
+        : $"{Path}:{Line}: [{Attribute}] argument {Argument} is not a literal, so the report cannot read it";
 }
 
 internal sealed record TestAttributes(IReadOnlyList<string> Covers, string? Feature, IReadOnlyList<FlowEntry> Flows);

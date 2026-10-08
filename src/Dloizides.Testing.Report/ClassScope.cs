@@ -6,6 +6,8 @@ internal sealed class ClassScope
     private string? declared;
     private int depth;
 
+    public int Depth => depth;
+
     public string Current => open.Count > 0 ? open.Peek().Name : string.Empty;
 
     public void Declare(string name) => declared = name;

@@ -5,15 +5,17 @@ namespace Dloizides.Testing;
 /// <summary>Lists declared requirements their own class never covers, and covered ids their own class never declares.</summary>
 public static class RequirementCoverage
 {
-    /// <summary>Returns "FullClassName: Id" for every [Requirement] that no [Covers] on the same class or its tests names.</summary>
+    /// <summary>Returns "FullClassName: Id" for every [Requirement] that no [Covers] on its class, its tests or a derived class names.</summary>
     public static IReadOnlyList<string> Uncovered(Assembly assembly)
     {
         ArgumentNullException.ThrowIfNull(assembly);
 
-        return Sorted(TestDiscovery.LoadableTypes(assembly).Where(DeclaresRequirements).SelectMany(type =>
+        var classes = TestDiscovery.LoadableTypes(assembly).Where(type => type.IsClass).ToList();
+        return Sorted(classes.SelectMany(type =>
         {
-            var covered = Covers(type).SelectMany(link => link.Ids).ToHashSet(StringComparer.Ordinal);
-            return DeclaredIds(type).Where(id => !covered.Contains(id)).Select(id => $"{type.FullName}: {id}");
+            var covered = classes.Where(other => other == type || other.IsSubclassOf(type))
+                .SelectMany(Covers).SelectMany(link => link.Ids).ToHashSet(StringComparer.Ordinal);
+            return OwnIds(type).Where(id => !covered.Contains(id)).Select(id => $"{type.FullName}: {id}");
         }));
     }
 
@@ -34,7 +36,8 @@ public static class RequirementCoverage
     private static IReadOnlyList<string> Sorted(IEnumerable<string> entries) =>
         entries.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
 
-    private static bool DeclaresRequirements(Type type) => type.IsClass && DeclaredIds(type).Any();
+    private static IEnumerable<string> OwnIds(Type type) =>
+        type.GetCustomAttributes<RequirementAttribute>(inherit: false).Select(requirement => requirement.Id);
 
     private static IEnumerable<string> DeclaredIds(Type type) =>
         type.GetCustomAttributes<RequirementAttribute>(inherit: true).Select(requirement => requirement.Id);

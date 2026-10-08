@@ -154,3 +154,16 @@ public class ForeignCoversSample
     {
     }
 }
+
+[Requirement("AC-04", "A requirement declared on an abstract base and covered by its derived class.")]
+public abstract class AbstractRequirementSample;
+
+[MethodUnderTest("Submit", "Submits the declaration to the market operator.")]
+public class DerivedRequirementSample : AbstractRequirementSample
+{
+    [Fact]
+    [Covers("AC-04")]
+    public void Submit_WhenDerived_CoversTheBase()
+    {
+    }
+}
