@@ -53,12 +53,14 @@ public class FeatureDocsTests
         const string gridBody = ".gbody{padding:0 12px 12px;display:grid;grid-template-columns:minmax(0,1fr);gap:8px}";
         const string shrinkableChildren = ".gbody>*{min-width:0}";
         const string cappedWhyLine = ".whycard dd{margin:0;min-width:0;max-width:70ch;overflow-wrap:anywhere}";
+        const string wrappingCaption = ".diagram figcaption{color:var(--muted);font-size:.85rem;margin-top:8px;overflow-wrap:anywhere}";
 
         var css = Assets.Css;
 
         Assert.Contains(gridBody, css, Ordinal);
         Assert.Contains(shrinkableChildren, css, Ordinal);
         Assert.Contains(cappedWhyLine, css, Ordinal);
+        Assert.Contains(wrappingCaption, css, Ordinal);
     }
 
     [Fact]

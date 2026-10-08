@@ -43,7 +43,7 @@ h2{font:600 1.3rem/1.2 var(--f-d);margin:2rem 0 .75rem}
 .diagram .scroll{overflow:auto;max-height:80vh;-webkit-overflow-scrolling:touch}
 .diagram .mermaid{width:max-content;min-width:100%;white-space:normal;overflow-wrap:normal;word-break:normal;color:var(--ink)}
 .diagram .mermaid svg{max-width:none}
-.diagram figcaption{color:var(--muted);font-size:.85rem;margin-top:8px}
+.diagram figcaption{color:var(--muted);font-size:.85rem;margin-top:8px;overflow-wrap:anywhere}
 .diagram figcaption a{display:inline-flex;align-items:center;min-height:44px}
 .tools{position:sticky;top:0;z-index:3;background:var(--bg);padding:10px 0;display:flex;gap:8px 10px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--line);margin-top:16px}
 .tools input{flex:1 1 16rem;min-width:0;min-height:44px;font:inherit;padding:0 12px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
