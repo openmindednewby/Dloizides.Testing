@@ -43,8 +43,8 @@ public class SchemaDiagramTests
     {
         TestResult[] tests =
         [
-            Test("SchemaTargetTests", "AColumns", "WhenMigrated", TestStatus.Pass),
-            Test("SchemaTargetTests", "BColumns", "WhenMigrated", TestStatus.Fail),
+            Test("ATargetTests", "Columns", "WhenMigrated", TestStatus.Pass),
+            Test("BTargetTests", "Columns", "WhenMigrated", TestStatus.Fail),
         ];
 
         var schema = SchemaDiagram.RenderSnapshot(Snapshot, tests);

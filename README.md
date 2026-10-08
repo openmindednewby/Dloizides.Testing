@@ -96,7 +96,7 @@ dotnet test --results-directory reports/20261007-100000/Unit-Shop.Tests --logger
 test-report reports/20261007-100000 --source tests --name Shop
 ```
 
-The run page groups tests by area (`[Feature]`, else the folder), then the class under test with a type badge from its suffix, then the `[MethodUnderTest]` method and its scenario table, all collapsed by default. "Feeds" and "step N of M" come only from `[Flow]`. Mermaid diagrams are written beside the page as `.mmd` files and embedded: `requirements.mmd` (from `[Requirement]` / `[Covers]`), one `flow-<name>.mmd` per `[Flow]`, and `schema.mmd` when `--ef-snapshot <path to the EF ModelSnapshot.cs>` is passed (a table is coloured by the tests whose method name starts with the table name, e.g. `ParksCommercialColumns`). The tool prints `Latest: <reports>/latest.html`, a stable link for task docs.
+The run page groups tests by area (`[Feature]`, else the folder), then the class under test with a type badge from its suffix, then the `[MethodUnderTest]` method and its scenario table, all collapsed by default. "Feeds" and "step N of M" come only from `[Flow]`. Mermaid diagrams are written beside the page as `.mmd` files and embedded: `requirements.mmd` (from `[Requirement]` / `[Covers]`), one `flow-<name>.mmd` per `[Flow]`, and `schema.mmd` when `--ef-snapshot <path to the EF ModelSnapshot.cs>` is passed (a table is coloured by its `<Table>TargetTests` class, e.g. `ParksCommercialTargetTests`, counting only expected-red or `MigrationTarget` sets). The tool prints `Latest: <reports>/latest.html`, a stable link for task docs.
 
 ```text
 ```

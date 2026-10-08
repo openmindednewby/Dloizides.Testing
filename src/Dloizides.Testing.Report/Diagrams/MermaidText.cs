@@ -21,6 +21,7 @@ internal static partial class MermaidText
                 '"' => "#quot;",
                 '<' => "#lt;",
                 '>' => "#gt;",
+                '`' => "#96;",
                 '\r' or '\n' or '\t' => " ",
                 _ => c.ToString(),
             });

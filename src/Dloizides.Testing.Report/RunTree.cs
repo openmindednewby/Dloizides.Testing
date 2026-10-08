@@ -76,7 +76,7 @@ internal sealed class RunTree(IReadOnlyList<FlowResult> flows)
 
     private static string Feeds(List<(FlowResult Flow, int Index)> steps)
     {
-        var next = steps.Where(s => s.Index + 1 < s.Flow.Steps.Count).Select(s => s.Flow.Steps[s.Index + 1].Tests[0])
+        var next = steps.Where(s => s.Index + 1 < s.Flow.Steps.Count).SelectMany(s => s.Flow.Steps[s.Index + 1].Tests)
             .DistinctBy(t => t.Class, StringComparer.Ordinal).ToList();
         if (next.Count == 0)
             return string.Empty;

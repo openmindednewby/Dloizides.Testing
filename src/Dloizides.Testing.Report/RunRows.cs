@@ -50,20 +50,31 @@ internal sealed class RunRows
 
 internal static class Badges
 {
-    private static readonly (string Suffix, string Label)[] Types =
-    [
-        ("EndpointTests", "Endpoint"), ("ControllerTests", "Controller"), ("JobTests", "Job"), ("RepositoryTests", "Repository"),
-        ("ServiceTests", "Service"), ("ParserTests", "Parser"), ("TargetTests", "Schema target"), ("HandlerTests", "Handler"),
-        ("ValidatorTests", "Validator"), ("ConsumerTests", "Consumer"), ("ClientTests", "Client"), ("MapperTests", "Mapper"),
-        ("ReaderTests", "Reader"), ("WriterTests", "Writer"), ("GuardTests", "Guard"),
-    ];
+    private const string TestsSuffix = "Tests";
+    private const string SchemaTarget = "Target";
 
     private static readonly TestStatus[] ChipOrder = [TestStatus.Pass, TestStatus.Fail, TestStatus.Skip, TestStatus.XFail];
 
     public static string TypeOf(string className)
     {
         var bare = className[(className.LastIndexOf('+') + 1)..];
-        return Types.FirstOrDefault(t => bare.EndsWith(t.Suffix, StringComparison.Ordinal)).Label ?? "Test";
+        var subject = bare.EndsWith(TestsSuffix, StringComparison.Ordinal) ? bare[..^TestsSuffix.Length] : bare;
+        var start = LastWordStart(subject);
+        if (start <= 0)
+            return "Test";
+        var word = subject[start..];
+        return word == SchemaTarget ? "Schema target" : word;
+    }
+
+    private static int LastWordStart(string name)
+    {
+        for (var i = name.Length - 1; i > 0; i--)
+        {
+            if (char.IsUpper(name[i]) && !char.IsUpper(name[i - 1]))
+                return i;
+        }
+
+        return 0;
     }
 
     public static string Count(int scenarios) => scenarios == 1 ? "1 scenario" : $"{scenarios} scenarios";

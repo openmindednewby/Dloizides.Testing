@@ -15,6 +15,7 @@ internal sealed record SchemaResult(string Mermaid, IReadOnlyDictionary<string, 
 internal static partial class SchemaDiagram
 {
     private const string Indent = "    ";
+    private const string TargetSuffix = "Target";
 
     [GeneratedRegex(@"\bEntity\(\s*""(?<name>[^""]+)""\s*,\s*\w+\s*=>")]
     private static partial Regex EntityBlock();
@@ -25,8 +26,8 @@ internal static partial class SchemaDiagram
     [GeneratedRegex(@"\bHasOne\(\s*""(?<target>[^""]+)""[^;]*?\.HasForeignKey\(\s*""(?<fk>[^""]+)""", RegexOptions.Singleline)]
     private static partial Regex HasOne();
 
-    [GeneratedRegex("(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|[_-]+")]
-    private static partial Regex WordBreak();
+    [GeneratedRegex("[_-]+")]
+    private static partial Regex Separators();
 
     public static SchemaModel ReadSnapshot(string source)
     {
@@ -54,35 +55,44 @@ internal static partial class SchemaDiagram
 
     public static SchemaResult Render(SchemaModel model, IReadOnlyList<TestResult> tests)
     {
-        var lookup = model.Tables.ToLookup(Normalize, StringComparer.Ordinal);
-        var covering = tests.Select(t => (Table: TableOf(t.Method, lookup), Test: t)).Where(p => p.Table is not null).ToList();
+        var entities = EntityIds(model.Tables);
         var classes = model.Tables.ToDictionary(
             t => t,
-            t => DiagramClass.ForWorst(covering.Where(p => p.Table == t).Select(p => p.Test), DiagramClass.Plain),
+            t => DiagramClass.ForWorst(tests.Where(test => Covers(test, t)), DiagramClass.Plain),
             StringComparer.Ordinal);
         var builder = new StringBuilder("erDiagram\n");
         foreach (var table in model.Tables)
-            builder.Append($"{Indent}{MermaidText.Entity(table)} {{\n{Indent}{Indent}string table \"{MermaidText.Label(table)}\"\n{Indent}}}\n");
-        foreach (var relation in model.Relations)
-            builder.Append($"{Indent}{MermaidText.Entity(relation.Principal)} ||--o{{ {MermaidText.Entity(relation.Dependent)} : \"{MermaidText.Label(relation.ForeignKey)}\"\n");
+            builder.Append($"{Indent}{entities[table]} {{\n{Indent}{Indent}string table \"{MermaidText.Label(table)}\"\n{Indent}}}\n");
+        foreach (var relation in model.Relations.Where(r => entities.ContainsKey(r.Principal) && entities.ContainsKey(r.Dependent)))
+            builder.Append($"{Indent}{entities[relation.Principal]} ||--o{{ {entities[relation.Dependent]} : \"{MermaidText.Label(relation.ForeignKey)}\"\n");
         builder.Append(DiagramClass.ClassDefs(Indent));
         foreach (var table in model.Tables)
-            builder.Append($"{Indent}class {MermaidText.Entity(table)} {classes[table]}\n");
+            builder.Append($"{Indent}class {entities[table]} {classes[table]}\n");
         return new SchemaResult(builder.ToString(), classes);
     }
 
-    private static string? TableOf(string method, ILookup<string, string> tables)
+    private static Dictionary<string, string> EntityIds(IReadOnlyList<string> tables)
     {
-        var words = WordBreak().Split(method).Where(w => w.Length > 0).ToList();
-        for (var count = words.Count; count > 0; count--)
+        var ids = new Dictionary<string, string>(StringComparer.Ordinal);
+        var taken = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var table in tables)
         {
-            var match = tables[string.Concat(words.Take(count)).ToLowerInvariant()].FirstOrDefault();
-            if (match is not null)
-                return match;
+            var id = MermaidText.Entity(table);
+            var unique = id;
+            for (var n = 2; !taken.Add(unique); n++)
+                unique = $"{id}_{n}";
+            ids[table] = unique;
         }
 
-        return null;
+        return ids;
     }
 
-    private static string Normalize(string table) => WordBreak().Replace(table, string.Empty).ToLowerInvariant();
+    private static bool Covers(TestResult test, string table)
+    {
+        var thing = MermaidText.ShortClass(test.Class);
+        return thing.EndsWith(TargetSuffix, StringComparison.Ordinal)
+            && string.Equals(Normalize(thing[..^TargetSuffix.Length]), Normalize(table), StringComparison.Ordinal);
+    }
+
+    private static string Normalize(string name) => Separators().Replace(name, string.Empty).ToLowerInvariant();
 }
