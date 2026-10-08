@@ -59,10 +59,9 @@ internal static class Badges
     {
         var bare = className[(className.LastIndexOf('+') + 1)..];
         var subject = bare.EndsWith(TestsSuffix, StringComparison.Ordinal) ? bare[..^TestsSuffix.Length] : bare;
-        var start = LastWordStart(subject);
-        if (start <= 0)
+        if (subject.Length == 0)
             return "Test";
-        var word = subject[start..];
+        var word = subject[LastWordStart(subject)..];
         return word == SchemaTarget ? "Schema target" : word;
     }
 
@@ -70,7 +69,9 @@ internal static class Badges
     {
         for (var i = name.Length - 1; i > 0; i--)
         {
-            if (char.IsUpper(name[i]) && !char.IsUpper(name[i - 1]))
+            var afterLower = !char.IsUpper(name[i - 1]);
+            var endsAcronym = i + 1 < name.Length && char.IsLower(name[i + 1]);
+            if (char.IsUpper(name[i]) && (afterLower || endsAcronym))
                 return i;
         }
 

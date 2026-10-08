@@ -39,7 +39,10 @@ public class RunPageTests
     [InlineData("AdmieIspResultsParserTests", "Parser")]
     [InlineData("ParksCommercialTargetTests", "Schema target")]
     [InlineData("Outer+InnerEndpointTests", "Endpoint")]
-    [InlineData("ATests", "Test")]
+    [InlineData("ParserTests", "Parser")]
+    [InlineData("HTTPClientTests", "Client")]
+    [InlineData("ApiHTTPTests", "HTTP")]
+    [InlineData("Tests", "Test")]
     public void TypeOf_WithClassName_UsesItsLastWord(string className, string badge)
     {
         var type = Badges.TypeOf(className);
