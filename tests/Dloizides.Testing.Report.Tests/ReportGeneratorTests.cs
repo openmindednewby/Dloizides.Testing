@@ -44,11 +44,27 @@ public sealed class ReportGeneratorTests : IDisposable
     public void Generate_WithTwoDatedRuns_PointsLatestAtTheNewest()
     {
         var older = WriteRun("20261006-090000", "Unit", new SampleResult("Shop.Tests.A.ATests", "Shop.Tests.A.ATests.Load_WhenSaved_ReturnsIt", "Passed"));
-        WriteRun("20261007-100000", "Unit", new SampleResult("Shop.Tests.A.ATests", "Shop.Tests.A.ATests.Load_WhenSaved_ReturnsIt", "Passed"));
+        var newer = WriteRun("20261007-100000", "Unit", new SampleResult("Shop.Tests.A.ATests", "Shop.Tests.A.ATests.Load_WhenSaved_ReturnsIt", "Passed"));
+        ReportGenerator.Generate(Options(newer));
 
         ReportGenerator.Generate(Options(older));
 
         File.ReadAllText(Path.Combine(reports, "latest.html")).ShouldContain("url=20261007-100000/index.html");
+    }
+
+    [Fact]
+    public void Generate_WithRunFolderWithoutIndex_LeavesItOffTheRunsIndex()
+    {
+        const string incomplete = "20261006-090000";
+        var current = WriteRun("20261007-100000", "Unit", new SampleResult("Shop.Tests.A.ATests", "Shop.Tests.A.ATests.Load_WhenSaved_ReturnsIt", "Passed"));
+        Directory.CreateDirectory(Path.Combine(reports, incomplete));
+
+        ReportGenerator.Generate(Options(current));
+
+        var index = File.ReadAllText(Path.Combine(reports, "index.html"));
+        index.ShouldSatisfyAllConditions(
+            () => index.ShouldContain("href=\"20261007-100000/index.html\""),
+            () => index.ShouldNotContain(incomplete));
     }
 
     [Fact]

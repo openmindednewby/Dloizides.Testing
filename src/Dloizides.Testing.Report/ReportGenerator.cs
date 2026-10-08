@@ -16,7 +16,7 @@ internal static class ReportGenerator
         File.WriteAllText(runIndex, RunPage.Render(run, options.RunTitle, options.Labels), Utf8NoBom);
 
         var runs = Directory.GetDirectories(reports)
-            .Where(d => RunDates.Parse(Path.GetFileName(d)) is not null)
+            .Where(d => RunDates.Parse(Path.GetFileName(d)) is not null && File.Exists(Path.Combine(d, "index.html")))
             .Select(d => string.Equals(Path.GetFullPath(d), runPath, StringComparison.OrdinalIgnoreCase) ? run : reader.Read(d))
             .OrderByDescending(r => r.Date)
             .ToList();
