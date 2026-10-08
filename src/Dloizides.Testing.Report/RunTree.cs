@@ -25,6 +25,8 @@ internal sealed class RunTree(RunDiagrams diagrams, ThingIds things, IReadOnlyLi
 
     private const string MethodKind = "method";
 
+    private const string Dot = " · ";
+
     private static readonly StringComparer Ordering = StringComparer.OrdinalIgnoreCase;
 
     private readonly RunRows rows = new();
@@ -63,11 +65,15 @@ internal sealed class RunTree(RunDiagrams diagrams, ThingIds things, IReadOnlyLi
         var head = new Fold("area", id, tally) { Title = title, Lead = AreaLead(feature, declared, tests) };
         if (classes.Count == 1)
             return Thing(classes[0], head, multiProject);
+        head = head with { Tag = $"Flow{Dot}{classes.Count} classes", Path = [string.Join(Dot, ClassNames(classes))] };
         var body = new StringBuilder(head.Lead);
         foreach (var thing in classes)
             body.Append(Thing(thing, Fold.Inner, multiProject));
         return Group(head, tests, body.ToString());
     }
+
+    private static IEnumerable<string> ClassNames(List<List<TestResult>> classes) =>
+        classes.Select(c => FeatureTitle.Subject(c[0].Class)).Distinct(StringComparer.Ordinal).Order(Ordering);
 
     private string AreaLead(string feature, ResultsFeature? declared, List<TestResult> tests)
     {

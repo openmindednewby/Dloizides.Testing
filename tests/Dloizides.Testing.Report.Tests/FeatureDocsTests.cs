@@ -36,6 +36,32 @@ public class FeatureDocsTests
     }
 
     [Fact]
+    public void FD1_WithTwoClassArea_TagsAreaAsFlowAndNamesClassesInMono()
+    {
+        var html = Page(
+            [],
+            Test("AdmieIspResultsParserTests", "Parse", "WhenValid", TestStatus.Pass),
+            Test("AdmieRepositoryTests", "Save", "WhenNew", TestStatus.Pass));
+
+        Assert.Contains("<span class=\"gname\"><span class=\"ftitle\">Shop</span><span class=\"kind\">Flow &#183; 2 classes</span></span>", html, Ordinal);
+        Assert.Contains("<span class=\"gpath\">AdmieIspResultsParser &#183; AdmieRepository</span>", html, Ordinal);
+    }
+
+    [Fact]
+    public void FD1_WithAreaBody_GivesGridOneShrinkableTrack()
+    {
+        const string gridBody = ".gbody{padding:0 12px 12px;display:grid;grid-template-columns:minmax(0,1fr);gap:8px}";
+        const string shrinkableChildren = ".gbody>*{min-width:0}";
+        const string cappedWhyLine = ".whycard dd{margin:0;min-width:0;max-width:70ch;overflow-wrap:anywhere}";
+
+        var css = Assets.Css;
+
+        Assert.Contains(gridBody, css, Ordinal);
+        Assert.Contains(shrinkableChildren, css, Ordinal);
+        Assert.Contains(cappedWhyLine, css, Ordinal);
+    }
+
+    [Fact]
     public void FD2_WithAssemblyFeature_ReadsWhyContextAndOwner()
     {
         var battery = new ResultsFeature { Name = "Battery availability", Why = "Shows the capacity.", Context = "Called by HENEX.", Owner = string.Empty };

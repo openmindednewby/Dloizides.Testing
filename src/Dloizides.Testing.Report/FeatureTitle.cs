@@ -22,7 +22,7 @@ internal static class FeatureTitle
 
     public static string Bare(string className) => className[(className.LastIndexOf('+') + 1)..];
 
-    private static string Subject(string className)
+    public static string Subject(string className)
     {
         var bare = Bare(className);
         return bare.Length > TestsSuffix.Length && bare.EndsWith(TestsSuffix, StringComparison.Ordinal) ? bare[..^TestsSuffix.Length] : bare;

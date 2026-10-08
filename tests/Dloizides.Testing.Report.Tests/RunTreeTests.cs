@@ -29,7 +29,7 @@ public class RunTreeTests
             Test("SubmitTests", "Submit", "WhenValid", TestStatus.Fail) with { Feature = "Shop" },
             Test("ViewTests", "View", "WhenSaved", TestStatus.Pass) with { Feature = "Shop" });
 
-        Assert.Contains("<details class=\"grp area\" id=\"a-1-shop\"><summary><span class=\"tw\"></span><span class=\"gh\"><span class=\"gname\"><span class=\"ftitle\">Shop</span></span>", html, StringComparison.Ordinal);
+        Assert.Contains("<details class=\"grp area\" id=\"a-1-shop\"><summary><span class=\"tw\"></span><span class=\"gh\"><span class=\"gname\"><span class=\"ftitle\">Shop</span><span class=\"kind\">Flow &#183; 2 classes</span></span>", html, StringComparison.Ordinal);
         Assert.Equal(1, Count(html, "<span class=\"chips\">"));
         Assert.Equal(2, Count(html, "<details class=\"grp thing"));
     }
