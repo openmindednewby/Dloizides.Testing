@@ -5,6 +5,8 @@ using Json.Schema;
 
 namespace Dloizides.Testing.Report;
 
+internal sealed record SchemaFailure(string Location, IReadOnlyDictionary<string, string>? Errors);
+
 internal static class ResultsJsonReader
 {
     private const string SchemaField = "schema";
@@ -54,12 +56,19 @@ internal static class ResultsJsonReader
         var result = Contract.Value.Evaluate(root, options);
         if (result.IsValid)
             return;
-        var failure = new[] { result }.Concat(result.Details)
-            .Where(detail => detail.HasErrors)
-            .OrderByDescending(detail => Segments(detail.InstanceLocation.ToString()).Length)
-            .First();
-        var problems = string.Join("; ", failure.Errors!.Values);
-        throw new ResultsJsonException(FieldName(failure.InstanceLocation.ToString()), $"breaks the schema: {problems}");
+        throw Describe(new[] { result }.Concat(result.Details)
+            .Select(detail => new SchemaFailure(detail.InstanceLocation.ToString(), detail.Errors)));
+    }
+
+    internal static ResultsJsonException Describe(IEnumerable<SchemaFailure> failures)
+    {
+        var failure = failures
+            .Where(detail => detail.Errors is { Count: > 0 })
+            .OrderByDescending(detail => Segments(detail.Location).Length)
+            .FirstOrDefault();
+        return failure is null
+            ? new ResultsJsonException(Root, "breaks the schema")
+            : new ResultsJsonException(FieldName(failure.Location), $"breaks the schema: {string.Join("; ", failure.Errors!.Values)}");
     }
 
     private static ResultsDocument Deserialize(JsonObject root)

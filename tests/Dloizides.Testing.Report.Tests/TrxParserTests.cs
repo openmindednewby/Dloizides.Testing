@@ -10,6 +10,20 @@ public class TrxParserTests
     private const string ClassName = "Shop.Tests.Orders.OrderServiceTests";
     private static readonly Dictionary<string, string> NoDescriptions = [];
 
+    [Theory]
+    [InlineData("executor://xunit/VsTestRunner2/netcoreapp", "xunit")]
+    [InlineData("executor://NUnit3TestExecutor", "nunit")]
+    [InlineData("executor://MSTestAdapter/v2", "mstest")]
+    [InlineData("", "xunit")]
+    public void Parse_WithAdapterTypeName_ReadsTheFramework(string adapter, string expected)
+    {
+        var xml = TrxSample.Build(new SampleResult(ClassName, ClassName + ".Save_WhenNew_ReturnsId", "Passed", Adapter: adapter));
+
+        var test = TrxParser.Parse(xml, new TrxContext("Unit", Project, false), NoDescriptions).Tests.Single();
+
+        test.Framework.ShouldBe(expected);
+    }
+
     [Fact]
     public void Parse_WithDefinitionAndDescription_ReadsClassMethodAndDescription()
     {

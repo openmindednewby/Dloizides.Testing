@@ -6,6 +6,7 @@ namespace Dloizides.Testing.Report;
 internal static class TrxParser
 {
     private const string TestsSuffix = "Tests";
+    private static readonly string[] KnownFrameworks = ["nunit", "mstest", "xunit"];
 
     public static TrxFile Parse(string xml, TrxContext context, IReadOnlyDictionary<string, string> descriptions)
     {
@@ -55,6 +56,7 @@ internal static class TrxParser
         return new TestResult
         {
             Name = testName,
+            Framework = FrameworkOf(definition is null ? string.Empty : Attr(definition, "adapterTypeName")),
             Project = context.Project,
             Feature = FeatureOf(className, context.Project, context.SetName),
             Class = shortClass,
@@ -69,6 +71,9 @@ internal static class TrxParser
             Stack = Text(error, "StackTrace").TrimEnd(),
         };
     }
+
+    private static string FrameworkOf(string adapterTypeName) =>
+        KnownFrameworks.FirstOrDefault(name => adapterTypeName.Contains(name, StringComparison.OrdinalIgnoreCase)) ?? ResultsJson.DefaultFramework;
 
     private static IEnumerable<XElement> Children(XElement parent, string localName) =>
         parent.Elements().Where(e => e.Name.LocalName == localName);

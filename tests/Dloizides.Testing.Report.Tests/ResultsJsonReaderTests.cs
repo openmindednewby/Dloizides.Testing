@@ -5,6 +5,7 @@ namespace Dloizides.Testing.Report.Tests;
 
 [MethodUnderTest("Read", "Rejects every results document the committed schema file rejects, naming the offending field instead of crashing.")]
 [MethodUnderTest("Parse", "Reports a requirement or covers id that breaks the shared id grammar as an attribute problem with its file and line.")]
+[MethodUnderTest("Describe", "Names the deepest failing field of a schema evaluation, or the document root when no failure carries an error message.")]
 public sealed class ResultsJsonReaderTests
 {
     private const string Head = """{"schema":"testdoc-results.v1","run":{"name":"r"},""";
@@ -23,6 +24,16 @@ public sealed class ResultsJsonReaderTests
         var read = () => ResultsJsonReader.Read(json);
 
         read.ShouldThrow<ResultsJsonException>().Message.ShouldContain($"field \"{field}\"");
+    }
+
+    [Fact]
+    public void Describe_WithNoFailureCarryingErrors_NamesTheRoot()
+    {
+        var failures = new[] { new SchemaFailure("/tests/0", null) };
+
+        var described = ResultsJsonReader.Describe(failures);
+
+        described.Message.ShouldBe("testdoc-results: field \"(root)\" breaks the schema");
     }
 
     [Fact]
