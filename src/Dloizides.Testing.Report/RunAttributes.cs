@@ -6,6 +6,7 @@ internal static class RunAttributes
     {
         Sets = run.Sets.Select(set => AttachSet(set, attributes)).ToList(),
         Requirements = attributes.Requirements.Select(r => ToRequirement(r, sourceRoots)).ToList(),
+        Features = attributes.Features.DistinctBy(f => f.Name, StringComparer.Ordinal).ToList(),
     };
 
     private static TestSet AttachSet(TestSet set, SourceAttributes attributes)
@@ -20,7 +21,7 @@ internal static class RunAttributes
     private static TestResult AttachTest(TestResult test, SourceAttributes attributes)
     {
         var declared = attributes.Test(AfterLast(test.Class, '+'), SourceMethod(test.Name));
-        return test with { Covers = declared.Covers, Flows = declared.Flows, Feature = declared.Feature ?? test.Feature };
+        return test with { Covers = declared.Covers, Flows = declared.Flows, UseCases = declared.UseCases, Feature = declared.Feature ?? test.Feature };
     }
 
     private static ResultsRequirement ToRequirement(RequirementRecord requirement, IReadOnlyList<string> sourceRoots) => new()

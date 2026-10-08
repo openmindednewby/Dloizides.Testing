@@ -134,6 +134,7 @@ internal static class ResultsJsonReader
         return new TestRun(run.Name, RunDates.Parse(run.Name), sets, Seconds(run), run.SetFilter)
         {
             Requirements = document.Requirements,
+            Features = document.Features ?? [],
             Repo = run.Repo,
             Sha = run.Sha,
             StartedAt = run.StartedAt,
@@ -168,6 +169,7 @@ internal static class ResultsJsonReader
             Covers = test.Covers,
             Flows = test.Flows.Select(f => new FlowEntry(f.Name, f.Step)).ToList(),
             Calls = test.Calls,
+            UseCases = test.UseCases ?? [],
             Status = status,
             Seconds = test.Seconds,
             Message = test.Message,

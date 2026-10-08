@@ -6,20 +6,24 @@ internal sealed record Fold(string Kind, string? Id, Tally? Status)
 {
     public static readonly Fold Inner = new(string.Empty, null, null);
 
-    public IReadOnlyList<string> Crumbs { get; init; } = [];
+    public string Title { get; init; } = string.Empty;
+
+    public string Tag { get; init; } = string.Empty;
+
+    public IReadOnlyList<string> Path { get; init; } = [];
 
     public string Meta { get; init; } = string.Empty;
 
     public string Lead { get; init; } = string.Empty;
 }
 
-internal sealed class RunTree(RunDiagrams diagrams, ThingIds things)
+internal sealed class RunTree(RunDiagrams diagrams, ThingIds things, IReadOnlyList<ResultsFeature> features)
 {
     private const string TableHead =
         "<colgroup><col class=\"c1\"><col class=\"c2\"><col class=\"c3\"><col class=\"c4\"></colgroup>"
         + "<thead><tr><th scope=\"col\">Scenario</th><th scope=\"col\">Expected</th><th scope=\"col\">Result</th><th scope=\"col\" class=\"num\">Time</th></tr></thead>";
 
-    private const string Separator = "<span class=\"sep\"> › </span>";
+    private const string MethodKind = "method";
 
     private static readonly StringComparer Ordering = StringComparer.OrdinalIgnoreCase;
 
@@ -50,11 +54,13 @@ internal sealed class RunTree(RunDiagrams diagrams, ThingIds things)
         areaCounter++;
         var id = $"a-{areaCounter}-{MermaidText.Slug(feature)}";
         var tally = new Tally(tests);
-        nav.Append($"<li><a href=\"#{id}\">{Badges.Dot(tally)}{E(feature)}<span class=\"n\">{tests.Count}</span></a></li>");
+        var declared = FeatureTitle.Find(features, feature);
+        var title = declared?.Name ?? FeatureTitle.Words(feature);
+        nav.Append($"<li><a href=\"#{id}\">{Badges.Dot(tally)}{E(title)}<span class=\"n\">{tests.Count}</span></a></li>");
         var classes = tests.GroupBy(t => (t.Project, t.Class))
             .OrderBy(g => g.Min(t => (int)t.Status)).ThenBy(g => g.Key.Class, Ordering)
             .Select(g => g.ToList()).ToList();
-        var head = new Fold("area", id, tally) { Crumbs = [E(feature)], Lead = AreaLead(tests) };
+        var head = new Fold("area", id, tally) { Title = title, Lead = AreaLead(feature, declared, tests) };
         if (classes.Count == 1)
             return Thing(classes[0], head, multiProject);
         var body = new StringBuilder(head.Lead);
@@ -63,14 +69,21 @@ internal sealed class RunTree(RunDiagrams diagrams, ThingIds things)
         return Group(head, tests, body.ToString());
     }
 
-    private string AreaLead(List<TestResult> tests)
+    private string AreaLead(string feature, ResultsFeature? declared, List<TestResult> tests)
     {
         var classes = tests.Select(t => t.Class).ToHashSet(StringComparer.Ordinal);
-        var parts = diagrams.Flows.SelectMany(f => f.Steps.Where(s => s.Things.Any(classes.Contains))
+        var flows = diagrams.Flows.Where(f => f.Steps.Any(s => s.Things.Any(classes.Contains))).ToList();
+        var parts = flows.SelectMany(f => f.Steps.Where(s => s.Things.Any(classes.Contains))
             .Select(s => $"Part of: <a href=\"#{E(f.Anchor)}\">{E(f.Name)}</a>, step {s.Step} of {f.LastStep}")).ToList();
-        if (diagrams.Schema is not null && classes.Overlaps(diagrams.SchemaClasses))
-            parts.Add("<a href=\"#schema-h\">Database diagram</a>");
-        return string.Concat(parts.Select(p => $"<p class=\"partof\">{p}</p>"));
+        var schema = diagrams.Schema is not null && classes.Overlaps(diagrams.SchemaClasses)
+            ? "<p class=\"partof\"><a href=\"#schema-h\">Database diagram</a></p>"
+            : string.Empty;
+        return AreaSections.Why(declared)
+            + AreaSections.UseCases(diagrams.UseCases.FirstOrDefault(d => d.Area == feature))
+            + string.Concat(parts.Select(p => $"<p class=\"partof\">{p}</p>"))
+            + AreaSections.Flows(flows)
+            + AreaSections.Sequence(diagrams.Sequences.FirstOrDefault(d => d.Area == feature))
+            + schema;
     }
 
     private string Thing(List<TestResult> tests, Fold fold, bool multiProject)
@@ -83,7 +96,9 @@ internal sealed class RunTree(RunDiagrams diagrams, ThingIds things)
         {
             Kind = fold.Id is null ? "thing" : fold.Kind,
             Id = fold.Id ?? thingId,
-            Crumbs = [.. fold.Crumbs, $"{E(MermaidText.ShortClass(first.Class))}<span class=\"type\">{E(Badges.TypeOf(first.Class))}</span>"],
+            Title = fold.Title.Length > 0 ? fold.Title : FeatureTitle.Class(first.Class),
+            Tag = FeatureTitle.Kind(first.Class),
+            Path = [FeatureTitle.Bare(first.Class)],
             Meta = fold.Meta + project + anchor + Feeds(FlowSteps(first.Class)),
             Lead = fold.Lead + RequirementFigure(thingId),
         };
@@ -94,7 +109,7 @@ internal sealed class RunTree(RunDiagrams diagrams, ThingIds things)
             return Method(methods[0], head);
         var body = new StringBuilder(head.Lead);
         foreach (var method in methods)
-            body.Append(Method(method, Fold.Inner with { Kind = "method" }));
+            body.Append(Method(method, Fold.Inner with { Kind = MethodKind }));
         return Group(head, tests, body.ToString());
     }
 
@@ -129,8 +144,8 @@ internal sealed class RunTree(RunDiagrams diagrams, ThingIds things)
         var description = first.Description.Length > 0
             ? $"<p class=\"desc\">{E(first.Description)}</p>"
             : "<p class=\"desc empty\">No description yet.</p>";
-        var head = fold with { Crumbs = [.. fold.Crumbs, $"<span class=\"mname\">{E(first.Method)}</span>"] };
-        var body = new StringBuilder(description).Append(head.Lead).Append($"<div class=\"tablebox\"><table>{TableHead}");
+        var head = fold.Title.Length > 0 ? fold with { Path = [.. fold.Path, first.Method] } : fold with { Title = first.Method };
+        var body = new StringBuilder(head.Lead).Append(description).Append($"<div class=\"tablebox\"><table>{TableHead}");
         foreach (var test in tests.OrderBy(t => (int)t.Status).ThenBy(t => t.Name, Ordering))
             body.Append(rows.Row(test));
         return Group(head, tests, body.Append("</table></div>").ToString());
@@ -141,7 +156,10 @@ internal sealed class RunTree(RunDiagrams diagrams, ThingIds things)
         var id = head.Id is null ? string.Empty : $" id=\"{E(head.Id)}\"";
         var chips = head.Status is null ? string.Empty : Badges.Chips(head.Status);
         var dot = head.Status is null ? Badges.Dot(new Tally(tests)) : string.Empty;
-        return $"<details class=\"grp {head.Kind}\"{id}><summary><span class=\"tw\"></span><span class=\"gh\">{dot}<span class=\"gname\">{string.Join(Separator, head.Crumbs)}</span>"
-            + $"<span class=\"tcount\">{Badges.Count(tests.Count)}</span>{head.Meta}{chips}</span></summary><div class=\"gbody\">{body}</div></details>";
+        var titleCss = head.Kind == MethodKind ? "mname" : "ftitle";
+        var tag = head.Tag.Length > 0 ? $"<span class=\"kind\">{E(head.Tag)}</span>" : string.Empty;
+        var path = head.Path.Count > 0 ? $"<span class=\"gpath\">{E(string.Join('.', head.Path))}</span>" : string.Empty;
+        return $"<details class=\"grp {head.Kind}\"{id}><summary><span class=\"tw\"></span><span class=\"gh\">{dot}<span class=\"gname\"><span class=\"{titleCss}\">{E(head.Title)}</span>{tag}</span>"
+            + $"<span class=\"tcount\">{Badges.Count(tests.Count)}</span>{head.Meta}{chips}{path}</span></summary><div class=\"gbody\">{body}</div></details>";
     }
 }

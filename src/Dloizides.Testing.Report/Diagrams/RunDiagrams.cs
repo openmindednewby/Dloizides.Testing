@@ -17,7 +17,11 @@ internal sealed record RunDiagrams(RequirementMapResult? Requirements, IReadOnly
 
     public IReadOnlySet<string> SchemaClasses { get; init; } = new HashSet<string>(StringComparer.Ordinal);
 
-    public bool Any => Requirements is not null || Flows.Count > 0 || Schema is not null;
+    public IReadOnlyList<AreaDiagram> UseCases { get; init; } = [];
+
+    public IReadOnlyList<AreaDiagram> Sequences { get; init; } = [];
+
+    public bool Any => Requirements is not null || Flows.Count > 0 || Schema is not null || UseCases.Count > 0 || Sequences.Count > 0;
 
     public IEnumerable<(string FileName, string Mermaid)> Files
     {
@@ -27,6 +31,8 @@ internal sealed record RunDiagrams(RequirementMapResult? Requirements, IReadOnly
                 yield return (map.FileName, map.Map.Mermaid);
             foreach (var flow in Flows)
                 yield return (flow.FileName, flow.Mermaid);
+            foreach (var area in UseCases.Concat(Sequences))
+                yield return (area.FileName, area.Mermaid);
             if (Schema is not null)
                 yield return (SchemaResult.FileName, Schema.Mermaid);
         }
@@ -41,6 +47,8 @@ internal sealed record RunDiagrams(RequirementMapResult? Requirements, IReadOnly
         var schema = snapshotSource is null ? null : SchemaDiagram.RenderSnapshot(snapshotSource, schemaTests);
         return new RunDiagrams(requirements, FlowDiagram.Render(tests), schema)
         {
+            UseCases = UseCaseDiagram.Render(tests),
+            Sequences = SequenceDiagram.Render(tests),
             ClassMaps = hasRequirements ? ClassMapsOf(run.Requirements, tests, ThingIds.For(tests)) : [],
             SchemaClasses = schema is null ? new HashSet<string>(StringComparer.Ordinal) : schemaTests.Select(t => t.Class).ToHashSet(StringComparer.Ordinal),
         };

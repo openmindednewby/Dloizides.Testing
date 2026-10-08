@@ -23,6 +23,7 @@ internal static class ResultsJsonWriter
                 Sets = run.Sets.Select(ToSet).ToList(),
             },
             Requirements = run.Requirements,
+            Features = run.Features,
             Tests = run.Sets.SelectMany(set => set.Tests.Select(test => ToTest(set, test))).ToList(),
         };
         return JsonSerializer.Serialize(document, ResultsJson.Options);
@@ -57,5 +58,6 @@ internal static class ResultsJsonWriter
         Message = test.Message,
         Stack = test.Stack,
         Calls = test.Calls,
+        UseCases = test.UseCases,
     };
 }

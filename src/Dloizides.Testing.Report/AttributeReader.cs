@@ -13,7 +13,7 @@ internal static partial class AttributeReader
     private const string TypeStart =
         @"(?<=(?:(?m:^)|[;{}\]]|\b(?:public|internal|private|protected|sealed|abstract|static|partial|file|readonly|ref|unsafe|new))\s*)";
 
-    private const string Token = @"(?<=[\[,]\s*)(?:global::)?(?:\w+\.)*(?<attr>Requirement|Covers|Feature|Flow)(?:Attribute)?\s*\(" + Arguments +
+    private const string Token = @"(?<=[\[,]\s*)(?:(?<asm>assembly)\s*:\s*)?(?:global::)?(?:\w+\.)*(?<attr>Requirement|Covers|Feature|Flow|UseCase)(?:Attribute)?\s*\(" + Arguments +
         @"\)|" + TypeStart + @"(?:record\s+(?:(?:class|struct)\s+)?|class\s+|struct\s+|interface\s+)(?<class>\w+)|\b(?:void|Task|ValueTask)" +
         Generic + @"\s+(?<method>\w+)\s*" + Generic + @"\s*\(|[{};]";
 
@@ -24,10 +24,14 @@ internal static partial class AttributeReader
     private const string IdName = "id";
     private const string TextName = "text";
     private const string NameName = "name";
+    private const string ActorName = "Actor";
+    private const string WhyName = "Why";
+    private const string ContextName = "Context";
+    private const string OwnerName = "Owner";
+    private const int NamedOnly = -1;
     private const int FirstPosition = 0;
     private const int StepPosition = 1;
     private const int TextPosition = 1;
-    private const int OneArgument = 1;
     private const int TwoArguments = 2;
 
     public static SourceAttributes ReadDirectories(IEnumerable<string> roots)
@@ -53,6 +57,12 @@ internal static partial class AttributeReader
         var braceReported = false;
         foreach (Match match in TokenPattern().Matches(SourceMask.Apply(source)))
         {
+            if (match.Groups["asm"].Success)
+            {
+                Apply(new Declaration(source, path, match, string.Empty), read, new AttributeSet());
+                continue;
+            }
+
             if (match.Groups["attr"].Success)
             {
                 pending.Add(match);
@@ -126,7 +136,8 @@ internal static partial class AttributeReader
 
     private static void ApplyComplete(Declaration declaration, IReadOnlyList<Argument> arguments, SourceAttributes read, AttributeSet target)
     {
-        var first = Bound(arguments, declaration.Name == "Requirement" ? IdName : NameName, FirstPosition);
+        var firstName = declaration.Name switch { "Requirement" => IdName, "UseCase" => TextName, _ => NameName };
+        var first = Bound(arguments, firstName, FirstPosition);
         switch (declaration.Name)
         {
             case "Requirement" when arguments.Count == TwoArguments && first?.Text is { } id && Bound(arguments, TextName, TextPosition)?.Text is { } text:
@@ -135,14 +146,30 @@ internal static partial class AttributeReader
                 else
                     read.Problems.Add(declaration.Problem(id, AttributeProblem.BadId));
                 break;
-            case "Feature" when arguments.Count == OneArgument && first?.Text is { } feature:
+            case "Feature" when declaration.OnAssembly && first?.Text is { } described:
+                read.Features.Add(FeatureOf(described, arguments));
+                break;
+            case "Feature" when first?.Text is { } feature:
                 target.Feature = feature;
+                break;
+            case "UseCase" when first?.Text is { } useCase:
+                target.UseCases.Add(new UseCaseEntry { Text = useCase, Actor = Named(arguments, ActorName) });
                 break;
             case "Flow" when arguments.Count == TwoArguments && first?.Text is { } flow && Bound(arguments, StepName, StepPosition)?.Number is { } step:
                 target.Flows.Add(new FlowEntry(flow, step));
                 break;
         }
     }
+
+    private static ResultsFeature FeatureOf(string name, IReadOnlyList<Argument> arguments) => new()
+    {
+        Name = name,
+        Why = Named(arguments, WhyName),
+        Context = Named(arguments, ContextName),
+        Owner = Named(arguments, OwnerName),
+    };
+
+    private static string Named(IReadOnlyList<Argument> arguments, string name) => Bound(arguments, name, NamedOnly)?.Text ?? string.Empty;
 
     private static Argument? Bound(IReadOnlyList<Argument> arguments, string name, int position) =>
         arguments.FirstOrDefault(argument => argument.Name == name) ??
@@ -161,6 +188,8 @@ internal static partial class AttributeReader
     private sealed record Declaration(string Source, string Path, Match Match, string Class)
     {
         public string Name => Match.Groups["attr"].Value;
+
+        public bool OnAssembly => Match.Groups["asm"].Success;
 
         public string Arguments => Source.Substring(Match.Groups["args"].Index, Match.Groups["args"].Length);
 

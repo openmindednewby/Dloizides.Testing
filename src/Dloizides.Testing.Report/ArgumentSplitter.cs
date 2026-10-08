@@ -54,7 +54,7 @@ internal static partial class ArgumentSplitter
         yield return current.ToString();
     }
 
-    [GeneratedRegex(@"^(\w+)\s*:(?!:)")]
+    [GeneratedRegex(@"^(\w+)\s*(?::(?!:)|=(?!=))")]
     private static partial Regex NamedPattern();
 
     [GeneratedRegex("""^"((?:[^"\\]|\\.)*)"$""")]

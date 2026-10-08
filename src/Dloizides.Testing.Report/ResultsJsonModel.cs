@@ -8,6 +8,7 @@ internal sealed class ResultsDocument
     public string Schema { get; init; } = ResultsJson.SchemaName;
     public ResultsRun Run { get; init; } = new();
     public IReadOnlyList<ResultsRequirement> Requirements { get; init; } = [];
+    public IReadOnlyList<ResultsFeature> Features { get; init; } = [];
     public IReadOnlyList<ResultsTest> Tests { get; init; } = [];
 }
 
@@ -45,6 +46,20 @@ internal sealed record ResultsRequirement
     public string Source { get; init; } = string.Empty;
 }
 
+internal sealed record ResultsFeature
+{
+    public string Name { get; init; } = string.Empty;
+    public string Why { get; init; } = string.Empty;
+    public string Context { get; init; } = string.Empty;
+    public string Owner { get; init; } = string.Empty;
+}
+
+internal sealed record UseCaseEntry
+{
+    public string Text { get; init; } = string.Empty;
+    public string Actor { get; init; } = string.Empty;
+}
+
 internal sealed class ResultsFlow
 {
     public string Name { get; init; } = string.Empty;
@@ -77,6 +92,7 @@ internal sealed class ResultsTest
     public string Args { get; init; } = string.Empty;
     public IReadOnlyList<string> Covers { get; init; } = [];
     public IReadOnlyList<ResultsFlow> Flows { get; init; } = [];
+    public IReadOnlyList<UseCaseEntry> UseCases { get; init; } = [];
     public string Status { get; init; } = string.Empty;
     public double Seconds { get; init; }
     public string Message { get; init; } = string.Empty;

@@ -18,12 +18,13 @@ internal sealed record AttributeProblem(string Path, int Line, string Attribute,
     };
 }
 
-internal sealed record TestAttributes(IReadOnlyList<string> Covers, string? Feature, IReadOnlyList<FlowEntry> Flows);
+internal sealed record TestAttributes(IReadOnlyList<string> Covers, string? Feature, IReadOnlyList<FlowEntry> Flows, IReadOnlyList<UseCaseEntry> UseCases);
 
 internal sealed class AttributeSet
 {
     public List<string> Covers { get; } = [];
     public List<FlowEntry> Flows { get; } = [];
+    public List<UseCaseEntry> UseCases { get; } = [];
     public string? Feature { get; set; }
 }
 
@@ -32,6 +33,7 @@ internal sealed class SourceAttributes
     private static readonly AttributeSet None = new();
 
     public List<RequirementRecord> Requirements { get; } = [];
+    public List<ResultsFeature> Features { get; } = [];
     public Dictionary<string, AttributeSet> Classes { get; } = new(StringComparer.Ordinal);
     public Dictionary<string, AttributeSet> Methods { get; } = new(StringComparer.Ordinal);
     public List<AttributeProblem> Problems { get; } = [];
@@ -43,7 +45,8 @@ internal sealed class SourceAttributes
         return new TestAttributes(
             [.. onClass.Covers, .. onMethod.Covers],
             onMethod.Feature ?? onClass.Feature,
-            [.. onClass.Flows, .. onMethod.Flows]);
+            [.. onClass.Flows, .. onMethod.Flows],
+            [.. onClass.UseCases, .. onMethod.UseCases]);
     }
 
     public string FeatureOr(string className, string method, string fallback) =>

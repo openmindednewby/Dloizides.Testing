@@ -17,7 +17,8 @@ public class RunTreeTests
             Battery("WithZeroStep", TestStatus.Skip));
 
         Assert.Equal(1, Count(html, "<details class=\"grp"));
-        Assert.Contains($"<span class=\"gname\">Battery availability{Separator}BatteryAvailabilityEndpoint<span class=\"type\">Endpoint</span>{Separator}<span class=\"mname\">BatteryAvailability</span></span>", html, StringComparison.Ordinal);
+        Assert.Contains("<span class=\"gname\"><span class=\"ftitle\">Battery availability</span><span class=\"kind\">Endpoint</span></span>", html, StringComparison.Ordinal);
+        Assert.Contains("<span class=\"gpath\">BatteryAvailabilityEndpointTests.BatteryAvailability</span>", html, StringComparison.Ordinal);
         Assert.Contains("<span class=\"tcount\">4 scenarios</span>", html, StringComparison.Ordinal);
     }
 
@@ -28,7 +29,7 @@ public class RunTreeTests
             Test("SubmitTests", "Submit", "WhenValid", TestStatus.Fail) with { Feature = "Shop" },
             Test("ViewTests", "View", "WhenSaved", TestStatus.Pass) with { Feature = "Shop" });
 
-        Assert.Contains("<details class=\"grp area\" id=\"a-1-shop\"><summary><span class=\"tw\"></span><span class=\"gh\"><span class=\"gname\">Shop</span>", html, StringComparison.Ordinal);
+        Assert.Contains("<details class=\"grp area\" id=\"a-1-shop\"><summary><span class=\"tw\"></span><span class=\"gh\"><span class=\"gname\"><span class=\"ftitle\">Shop</span></span>", html, StringComparison.Ordinal);
         Assert.Equal(1, Count(html, "<span class=\"chips\">"));
         Assert.Equal(2, Count(html, "<details class=\"grp thing"));
     }

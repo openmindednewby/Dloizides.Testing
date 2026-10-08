@@ -39,8 +39,9 @@ public sealed class ReportGeneratorTests : IDisposable
         var html = File.ReadAllText(ReportGenerator.Generate(Options(run)).RunPage);
 
         html.ShouldSatisfyAllConditions(
-            () => html.ShouldContain("<span class=\"gname\">Battery<span class=\"sep\"> › </span>BatteryEndpoint<span class=\"type\">Endpoint</span>"),
-            () => html.ShouldContain("<span class=\"sep\"> › </span><span class=\"mname\">Load</span></span>"));
+            () => html.ShouldContain("<span class=\"gname\"><span class=\"ftitle\">Battery</span><span class=\"kind\">Endpoint</span></span>"),
+            () => html.ShouldContain("<span class=\"gpath\">BatteryEndpoint"),
+            () => html.ShouldContain(".Load</span>"));
     }
 
     [Fact]

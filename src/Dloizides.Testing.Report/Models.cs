@@ -19,6 +19,7 @@ internal sealed record TestResult
     public IReadOnlyList<string> Covers { get; init; } = [];
     public IReadOnlyList<FlowEntry> Flows { get; init; } = [];
     public IReadOnlyList<ResultsCall> Calls { get; init; } = [];
+    public IReadOnlyList<UseCaseEntry> UseCases { get; init; } = [];
 }
 
 internal sealed record TrxContext(string SetName, string Project, bool ExpectRed);
@@ -39,6 +40,7 @@ internal sealed class TestSet(string name, bool expectRed)
 internal sealed record TestRun(string Name, DateTime? Date, IReadOnlyList<TestSet> Sets, double Seconds, string SetFilter)
 {
     public IReadOnlyList<ResultsRequirement> Requirements { get; init; } = [];
+    public IReadOnlyList<ResultsFeature> Features { get; init; } = [];
     public string? Repo { get; init; }
     public string? Sha { get; init; }
     public string? StartedAt { get; init; }
