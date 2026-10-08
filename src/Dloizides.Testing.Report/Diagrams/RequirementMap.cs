@@ -26,6 +26,8 @@ internal sealed record RequirementMapResult(string Mermaid, IReadOnlyList<Requir
     }
 }
 
+internal sealed record NodeRegistry(Dictionary<string, string> Ids, StringBuilder Builder);
+
 internal static class RequirementMap
 {
     private const string Indent = "    ";
@@ -37,14 +39,14 @@ internal static class RequirementMap
         var entries = requirements.DistinctBy(r => r.Id, StringComparer.Ordinal).Select(r => (r.Id, r.Title, Declared: true))
             .Concat(undeclared.Select(id => (Id: id, Title: string.Empty, Declared: false)))
             .ToList();
-        var cards = entries.Select((e, i) => Card(i, e.Id, e.Title, e.Declared, tests)).ToList();
+        var cards = entries.Select((e, i) => Card(i, e, tests)).ToList();
         return new RequirementMapResult(Draw(cards), cards);
     }
 
-    private static RequirementCard Card(int index, string id, string title, bool declared, IReadOnlyList<TestResult> tests)
+    private static RequirementCard Card(int index, (string Id, string Title, bool Declared) entry, IReadOnlyList<TestResult> tests)
     {
-        var covering = tests.Where(t => t.Covers.Contains(id, StringComparer.Ordinal)).ToList();
-        return new RequirementCard(index, id, title, DiagramClass.ForWorst(covering, DiagramClass.Empty), covering, declared);
+        var covering = tests.Where(t => t.Covers.Contains(entry.Id, StringComparer.Ordinal)).ToList();
+        return new RequirementCard(index, entry.Id, entry.Title, DiagramClass.ForWorst(covering, DiagramClass.Empty), covering, entry.Declared);
     }
 
     private static string Draw(IReadOnlyList<RequirementCard> cards)
@@ -54,16 +56,17 @@ internal static class RequirementMap
         Group(nodes, "undeclared", $"Undeclared ids ({cards.Count(c => !c.Declared)})", cards.Where(c => !c.Declared).ToList());
         var edges = new StringBuilder();
         var ids = new Dictionary<string, string>(StringComparer.Ordinal);
+        var registry = new NodeRegistry(ids, nodes);
         foreach (var card in cards)
         {
             foreach (var method in card.Tests.GroupBy(MermaidText.MethodKey))
             {
-                var methodId = Node(ids, "m:" + method.Key, "m", nodes, method.Key, DiagramClass.ForWorst(method, DiagramClass.Empty));
+                var methodId = Node(registry, "m:" + method.Key, "m", method.Key, DiagramClass.ForWorst(method, DiagramClass.Empty));
                 edges.Append($"{Indent}r{card.Index} --> {methodId}\n");
                 foreach (var test in method)
                 {
                     var label = test.Scenario.Length > 0 ? $"{test.Scenario}: {test.Expected}" : test.Expected;
-                    var testId = Node(ids, "t:" + test.Name, "t", nodes, label, DiagramClass.For(test.Status));
+                    var testId = Node(registry, "t:" + test.Name, "t", label, DiagramClass.For(test.Status));
                     edges.Append($"{Indent}{methodId} --> {testId}\n");
                 }
             }
@@ -86,8 +89,9 @@ internal static class RequirementMap
         builder.Append($"{Indent}end\n");
     }
 
-    private static string Node(Dictionary<string, string> ids, string key, string prefix, StringBuilder builder, string label, string cssClass)
+    private static string Node(NodeRegistry registry, string key, string prefix, string label, string cssClass)
     {
+        var (ids, builder) = (registry.Ids, registry.Builder);
         if (ids.TryGetValue(key, out var existing))
             return existing;
         var id = $"{prefix}{ids.Count}";
