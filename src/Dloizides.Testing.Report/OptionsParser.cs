@@ -7,7 +7,8 @@ internal sealed record ReportOptions(
     IReadOnlyList<string> SetOrder,
     string Name,
     IReadOnlyDictionary<string, string>? SetLabelOverrides = null,
-    string? ResultsFile = null)
+    string? ResultsFile = null,
+    string? EfSnapshot = null)
 {
     public SetLabels Labels => new(SetLabelOverrides ?? new Dictionary<string, string>());
 
@@ -21,7 +22,7 @@ internal sealed record ParseResult(ReportOptions? Options, string Error, bool Is
 internal static class OptionsParser
 {
     public const string Usage =
-        "Usage: test-report <run-folder> [--source <dir>]... [--expected-red <set>[,<set>...]]... [--set-order <set>[,<set>...]] [--name <product>] [--set-label <Set>=<sentence>]... [--results <testdoc-results.v1.json>]";
+        "Usage: test-report <run-folder> [--source <dir>]... [--expected-red <set>[,<set>...]]... [--set-order <set>[,<set>...]] [--name <product>] [--set-label <Set>=<sentence>]... [--results <testdoc-results.v1.json>] [--ef-snapshot <ModelSnapshot.cs>]";
 
     public static ParseResult Parse(IReadOnlyList<string> args)
     {
@@ -31,6 +32,7 @@ internal static class OptionsParser
         var setOrder = new List<string>();
         var name = string.Empty;
         string? results = null;
+        string? snapshot = null;
         var labels = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         for (var i = 0; i < args.Count; i++)
         {
@@ -55,6 +57,7 @@ internal static class OptionsParser
                 case "--set-order": setOrder.AddRange(SplitList(value)); break;
                 case "--name": name = value.Trim(); break;
                 case "--results": results = Path.GetFullPath(value); break;
+                case "--ef-snapshot": snapshot = Path.GetFullPath(value); break;
                 case "--set-label":
                     var eq = value.IndexOf('=', StringComparison.Ordinal);
                     if (eq <= 0)
@@ -67,7 +70,7 @@ internal static class OptionsParser
 
         if (runFolder is null)
             return Fail("Missing <run-folder>.");
-        var options = new ReportOptions(Path.GetFullPath(runFolder), sources, expectedRed, setOrder, name, labels, results);
+        var options = new ReportOptions(Path.GetFullPath(runFolder), sources, expectedRed, setOrder, name, labels, results, snapshot);
         return new ParseResult(options, string.Empty, false);
     }
 

@@ -16,28 +16,80 @@ public sealed class ReportGeneratorTests : IDisposable
     }
 
     [Fact]
-    public void Generate_WithFailingTest_ListsItFirstWithItsFeatureClosed()
+    public void Generate_WithFailingTest_ListsItFirstWithItsAreaClosed()
     {
         const string passing = "Shop.Tests.Alpha.AlphaTests.Load_WhenSaved_ReturnsIt";
         const string failing = "Shop.Tests.Beta.BetaTests.Save_WhenNew_ReturnsId";
         var run = WriteRun("20261007-100000", "Unit", new SampleResult("Shop.Tests.Alpha.AlphaTests", passing, "Passed"), new SampleResult("Shop.Tests.Beta.BetaTests", failing, "Failed"));
 
-        var html = File.ReadAllText(ReportGenerator.Generate(Options(run)));
+        var html = File.ReadAllText(ReportGenerator.Generate(Options(run)).RunPage);
 
         html.ShouldSatisfyAllConditions(
             () => html.ShouldContain($"<ol class=\"attn\"><li><a href=\"#t-1\">{failing}</a></li></ol>"),
-            () => html.ShouldContain("<details class=\"feat\"><summary><span class=\"fname\">Beta</span>"),
+            () => html.ShouldContain("<details class=\"area\" id=\"a-1-beta\"><summary>"),
+            () => html.ShouldNotContain("<details class=\"area\" open"),
             () => html.IndexOf(">Beta<", StringComparison.Ordinal).ShouldBeLessThan(html.IndexOf(">Alpha<", StringComparison.Ordinal)));
     }
 
     [Fact]
-    public void Generate_WithFeatureClass_ShowsFeatureAndClassSeparatedInClosedHeading()
+    public void Generate_WithFeatureClass_ShowsAreaThenThingWithTypeBadge()
     {
         var run = WriteRun("20261007-100000", "Unit", new SampleResult("Shop.Tests.Battery.BatteryEndpointTests", "Shop.Tests.Battery.BatteryEndpointTests.Load_WhenSaved_ReturnsIt", "Passed"));
 
-        var html = File.ReadAllText(ReportGenerator.Generate(Options(run)));
+        var html = File.ReadAllText(ReportGenerator.Generate(Options(run)).RunPage);
 
-        html.ShouldContain("<details class=\"feat\"><summary><span class=\"fname\">Battery</span><span class=\"fsep\" aria-hidden=\"true\"> · </span><span class=\"fcls\">BatteryEndpointTests</span>");
+        html.ShouldSatisfyAllConditions(
+            () => html.ShouldContain("<span class=\"aname\">Battery</span>"),
+            () => html.ShouldContain("<span class=\"tname\">BatteryEndpoint</span><span class=\"type\">Endpoint</span>"),
+            () => html.ShouldContain("<details class=\"method\"><summary><span class=\"tw\"></span><span class=\"mname\">Load</span>"));
+    }
+
+    [Fact]
+    public void Generate_WithoutFlowAttributes_ShowsNoFeedsOrSteps()
+    {
+        var run = WriteRun("20261007-100000", "Unit", new SampleResult("Shop.Tests.Battery.BatteryEndpointTests", "Shop.Tests.Battery.BatteryEndpointTests.Load_WhenSaved_ReturnsIt", "Passed"));
+
+        var html = File.ReadAllText(ReportGenerator.Generate(Options(run)).RunPage);
+
+        html.ShouldSatisfyAllConditions(
+            () => html.ShouldNotContain("Feeds:"),
+            () => html.ShouldNotContain("class=\"flow\""),
+            () => html.ShouldNotContain("<pre class=\"mermaid\">"));
+    }
+
+    [Fact]
+    public void Generate_WithFlowAttributes_LinksEachStepToTheNextAndWritesTheDiagram()
+    {
+        var source = Path.Combine(reports, "src");
+        Directory.CreateDirectory(source);
+        File.WriteAllText(Path.Combine(source, "ImportTests.cs"), """
+            public class FetchJobTests
+            {
+                [Fact]
+                [Flow("Import", 1)]
+                public void Fetch_WhenDue_Downloads() { }
+            }
+
+            public class ParserTests
+            {
+                [Fact]
+                [Flow("Import", 2)]
+                public void Parse_WhenValid_ReadsRows() { }
+            }
+            """);
+        var run = WriteRun(
+            "20261007-100000",
+            "Unit",
+            new SampleResult("Shop.Tests.Import.FetchJobTests", "Shop.Tests.Import.FetchJobTests.Fetch_WhenDue_Downloads", "Passed"),
+            new SampleResult("Shop.Tests.Import.ParserTests", "Shop.Tests.Import.ParserTests.Parse_WhenValid_ReadsRows", "Passed"));
+
+        var html = File.ReadAllText(ReportGenerator.Generate(Options(run) with { SourceRoots = [source] }).RunPage);
+
+        html.ShouldSatisfyAllConditions(
+            () => html.ShouldContain("Feeds:&nbsp;<a href=\"#c-shop-tests-parsertests\">Parser &#9656;</a>"),
+            () => html.ShouldContain("<b>Import: step 1 of 2</b>"),
+            () => html.ShouldContain("<pre class=\"mermaid\">flowchart LR"),
+            () => File.ReadAllText(Path.Combine(run, "flow-import.mmd")).ShouldContain("s1 --> s2"));
     }
 
     [Fact]
@@ -45,7 +97,7 @@ public sealed class ReportGeneratorTests : IDisposable
     {
         var run = WriteRun("20261007-100000", "Target", new SampleResult("Shop.Tests.Beta.BetaTests", "Shop.Tests.Beta.BetaTests.Save_WhenNew_ReturnsId", "Failed"));
 
-        var html = File.ReadAllText(ReportGenerator.Generate(Options(run) with { ExpectedRedSets = new HashSet<string> { "Target" } }));
+        var html = File.ReadAllText(ReportGenerator.Generate(Options(run) with { ExpectedRedSets = new HashSet<string> { "Target" } }).RunPage);
 
         html.ShouldContain("<li class=\"set amber\"><span class=\"set-name\">Target</span><span class=\"set-verdict\">Red as expected: 1 targets are not built yet.</span>");
     }
@@ -89,6 +141,16 @@ public sealed class ReportGeneratorTests : IDisposable
             () => options.SetOrder.ShouldBe(["Unit", "Target"]),
             () => options.SourceRoots.ShouldBe([Path.GetFullPath("src")]),
             () => options.RunTitle.ShouldBe("Shop tests"));
+    }
+
+    [Fact]
+    public void Parse_WithEfSnapshot_ReadsItsFullPath()
+    {
+        string[] args = ["runs/20261007-100000", "--ef-snapshot", "Migrations/ShopDbContextModelSnapshot.cs"];
+
+        var options = OptionsParser.Parse(args).Options!;
+
+        options.EfSnapshot.ShouldBe(Path.GetFullPath("Migrations/ShopDbContextModelSnapshot.cs"));
     }
 
     [Fact]

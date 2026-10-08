@@ -2,11 +2,15 @@ using System.Text;
 
 namespace Dloizides.Testing.Report;
 
+internal sealed record ReportPaths(string RunPage, string Latest);
+
 internal static class ReportGenerator
 {
+    public const string LatestFile = "latest.html";
+
     private static readonly UTF8Encoding Utf8NoBom = new(false);
 
-    public static string Generate(ReportOptions options)
+    public static ReportPaths Generate(ReportOptions options)
     {
         var reader = new RunReader(options, MethodDescriptionReader.ReadDirectories(options.SourceRoots));
         var runPath = Path.TrimEndingDirectorySeparator(Path.GetFullPath(options.RunFolder));
@@ -16,7 +20,9 @@ internal static class ReportGenerator
             File.WriteAllText(Path.Combine(runPath, ResultsJson.FileName), ResultsJsonWriter.Write(run), Utf8NoBom);
 
         var runIndex = Path.Combine(runPath, "index.html");
-        File.WriteAllText(runIndex, RunPage.Render(run, options.RunTitle, options.Labels), Utf8NoBom);
+        var diagrams = RunDiagrams.Build(run, options.EfSnapshot is { } snapshot ? File.ReadAllText(snapshot) : null);
+        diagrams.WriteFiles(runPath, Utf8NoBom);
+        File.WriteAllText(runIndex, RunPage.Render(run, options.RunTitle, options.Labels, diagrams), Utf8NoBom);
 
         var runs = Directory.GetDirectories(reports)
             .Where(d => RunDates.Parse(Path.GetFileName(d)) is not null && File.Exists(Path.Combine(d, "index.html")))
@@ -24,9 +30,9 @@ internal static class ReportGenerator
             .OrderByDescending(r => r.Date)
             .ToList();
         File.WriteAllText(Path.Combine(reports, "index.html"), IndexPage.Render(runs, options.IndexTitle, options.Labels), Utf8NoBom);
-        if (runs.Count > 0)
-            File.WriteAllText(Path.Combine(reports, "latest.html"), IndexPage.Latest(runs[0].Name, options.RunTitle), Utf8NoBom);
-        return runIndex;
+        var latest = Path.Combine(reports, LatestFile);
+        File.WriteAllText(latest, IndexPage.Latest(runs.Count > 0 ? runs[0].Name : run.Name, options.RunTitle), Utf8NoBom);
+        return new ReportPaths(runIndex, latest);
     }
 
     private static TestRun FromTrx(RunReader reader, string runPath, ReportOptions options) =>
@@ -46,7 +52,7 @@ internal static class IndexPage
     public static string Render(IReadOnlyList<TestRun> runs, string title, SetLabels labels)
     {
         var body = new StringBuilder($"<h1>{Html.Encode(title)}</h1>");
-        var latestLink = runs.Count > 0 ? " <a class=\"latest\" href=\"latest.html\">Open the latest run</a>." : string.Empty;
+        var latestLink = runs.Count > 0 ? $" <a class=\"latest\" href=\"{ReportGenerator.LatestFile}\">Open the latest run</a>." : string.Empty;
         body.Append($"<p class=\"when\">Newest first. Amber means a set marked expected-red failed as expected.{latestLink}</p>");
         body.Append(Head);
         foreach (var run in runs)

@@ -1,3 +1,5 @@
+using static Dloizides.Testing.Report.Tests.DiagramSamples;
+
 namespace Dloizides.Testing.Report.Tests;
 
 [MethodUnderTest("AC07", "Gives a failing test in the expected-red set the amber xfail node class instead of red.")]
@@ -7,20 +9,26 @@ public class StatusColourTests
     [Fact]
     public void AC07_WithFailingTestInExpectedRedSet_UsesAmberXfailClass()
     {
-        const string given = "an expected-red set with a failing test";
-        const string when = "the diagram is rendered";
-        const string then = "node class is the amber xfail class, not red";
+        var status = StatusText.FromOutcome("Failed", expectRed: true);
+        TestResult[] tests = [Test("ParksTargetTests", "ParksColumns", "WhenMerged", status) with { Covers = ["AC-01"] }];
 
-        Assert.Fail($"AC-07 not implemented. Given {given}; when {when}; then {then}.");
+        var map = RequirementMap.Render([Requirement("AC-01", "A")], tests);
+
+        Assert.Contains("r0[\"AC-01: A\"]:::xfail", map.Mermaid, StringComparison.Ordinal);
+        Assert.Contains("classDef xfail fill:#9a5b06", map.Mermaid, StringComparison.Ordinal);
+        Assert.DoesNotContain(":::fail", map.Mermaid, StringComparison.Ordinal);
     }
 
     [Fact]
     public void AC19_WithPassingTestInExpectedRedSet_UsesRedClass()
     {
-        const string given = "a test in an expected-red set that passes (XPass)";
-        const string when = "the diagram is rendered";
-        const string then = "node class is red, same as a failure";
+        var status = StatusText.FromOutcome("Passed", expectRed: true);
+        TestResult[] tests = [Test("ParksTargetTests", "ParksColumns", "WhenMerged", status) with { Covers = ["AC-01"] }];
 
-        Assert.Fail($"AC-19 not implemented. Given {given}; when {when}; then {then}.");
+        var map = RequirementMap.Render([Requirement("AC-01", "A")], tests);
+
+        Assert.Contains("r0[\"AC-01: A\"]:::fail", map.Mermaid, StringComparison.Ordinal);
+        Assert.Contains("classDef fail fill:#b3261e", map.Mermaid, StringComparison.Ordinal);
+        Assert.DoesNotContain(":::pass", map.Mermaid, StringComparison.Ordinal);
     }
 }

@@ -33,9 +33,17 @@ internal static class Program
             return UsageError;
         }
 
+        if (parsed.Options.EfSnapshot is { } snapshot && !File.Exists(snapshot))
+        {
+            error.WriteLine($"EF model snapshot not found: {snapshot}");
+            return UsageError;
+        }
+
         try
         {
-            output.WriteLine($"Report: {ReportGenerator.Generate(parsed.Options)}");
+            var report = ReportGenerator.Generate(parsed.Options);
+            output.WriteLine($"Report: {report.RunPage}");
+            output.WriteLine($"Latest: {report.Latest}");
             return 0;
         }
         catch (ResultsJsonException exception)

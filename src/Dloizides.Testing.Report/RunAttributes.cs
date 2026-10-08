@@ -20,7 +20,7 @@ internal static class RunAttributes
     private static TestResult AttachTest(TestResult test, SourceAttributes attributes)
     {
         var declared = attributes.Test(AfterLast(test.Class, '+'), SourceMethod(test.Name));
-        return test with { Covers = declared.Covers, Flows = declared.Flows };
+        return test with { Covers = declared.Covers, Flows = declared.Flows, Feature = declared.Feature ?? test.Feature };
     }
 
     private static ResultsRequirement ToRequirement(RequirementRecord requirement, IReadOnlyList<string> sourceRoots) => new()

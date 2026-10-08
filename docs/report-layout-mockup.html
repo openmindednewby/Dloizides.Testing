@@ -1,0 +1,298 @@
+<title>Test Report Run Page</title>
+<style>
+/* Layout: bounded 1200px column; sticky area index on the left at desktop, a wrapping area menu on top at phone width. Tokens continue Dloizides.Testing report.css. */
+:root{--bg:#eef1f4;--surface:#ffffff;--ink:#17212b;--muted:#556372;--line:#d3dae2;--pass:#1d7348;--xfail:#9a5b06;--fail:#b3261e;--skip:#6b7785;--accent:#1f5f8b;--example:#6a4c93;
+--f-d:Bahnschrift,"DIN Alternate","Segoe UI Variable Display","Segoe UI",sans-serif;--f-b:"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;--f-m:"Cascadia Mono",Consolas,ui-monospace,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1419;--surface:#161d24;--ink:#e3e8ee;--muted:#9aa7b5;--line:#2a343f;--pass:#55b884;--xfail:#e3a447;--fail:#f2766c;--skip:#8f9bab;--accent:#7cb7e0;--example:#b9a2dc;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1419;--surface:#161d24;--ink:#e3e8ee;--muted:#9aa7b5;--line:#2a343f;--pass:#55b884;--xfail:#e3a447;--fail:#f2766c;--skip:#8f9bab;--accent:#7cb7e0;--example:#b9a2dc;color-scheme:dark}
+:root{--xfail-soft:color-mix(in srgb,var(--xfail) 35%,var(--surface));--tint:color-mix(in srgb,var(--accent) 7%,var(--surface))}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-b)}
+.wrap{max-width:1200px;margin:0 auto;padding-inline:16px;padding-block:16px 64px}
+a{color:var(--accent)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+h1{font:600 2rem/1.15 var(--f-d);margin:.25rem 0 .35rem;text-wrap:balance}
+.when{color:var(--muted);margin:0 0 12px;font-variant-numeric:tabular-nums}
+.mock{border:1px dashed var(--example);color:var(--example);font-size:.8rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;display:inline-block}
+.headline{font:500 1.1rem/1.4 var(--f-d);margin:0;padding:12px 16px;border-left:6px solid var(--pass);background:var(--surface);display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
+.bar{display:flex;gap:2px;height:12px;background:var(--line);flex:1 1 220px;min-width:0}
+.seg{min-width:4px}.seg.pass{background:var(--pass)}.seg.fail{background:var(--fail)}.seg.skip{background:var(--skip)}
+.seg.xfail,.sw.xfail{background:repeating-linear-gradient(-45deg,var(--xfail) 0 5px,var(--xfail-soft) 5px 10px)}
+/* requirement strip (example) */
+.req{margin:16px 0;border:1px dashed var(--example);background:var(--surface);padding:12px 16px}
+.req header{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:10px}
+.req h2{font:600 1.05rem var(--f-d);margin:0}
+.req ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:8px}
+.req li{border:1px solid var(--line);border-top:4px solid var(--tone);padding:8px 10px;background:var(--bg);min-width:0}
+.req .rid{font:600 .8rem var(--f-m);color:var(--muted)}
+.req .rt{display:block;font-weight:600}
+.req a{display:inline-flex;align-items:center;min-height:44px;font-size:.88rem;overflow-wrap:anywhere}
+.green{--tone:var(--pass)}.amber{--tone:var(--skip)}.red{--tone:var(--fail)}.xf{--tone:var(--xfail)}
+/* toolbar */
+.tools{position:sticky;top:env(safe-area-inset-top,0px);z-index:3;background:var(--bg);padding:10px 0;display:flex;gap:8px 10px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--line)}
+.tools input{flex:1 1 16rem;min-width:0;min-height:44px;font:inherit;padding:0 12px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.tools button{min-height:44px;padding:0 14px;font:600 .9rem var(--f-b);background:var(--surface);color:var(--ink);border:1px solid var(--line);cursor:pointer}
+.tools button:hover{border-color:var(--accent)}
+.tools button:active{transform:translateY(1px)}
+.tools output{color:var(--muted);font-size:.9rem;font-variant-numeric:tabular-nums;flex:1 1 100%}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;color:var(--muted);font-size:.85rem;margin:8px 0 0}
+/* shell */
+.shell{display:grid;grid-template-columns:15rem minmax(0,1fr);gap:24px;margin-top:16px;align-items:start}
+nav.areas{position:sticky;top:calc(env(safe-area-inset-top,0px) + 132px)}
+nav.areas h2{font:600 .78rem var(--f-b);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+nav.areas ul{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+nav.areas a{display:flex;align-items:center;gap:8px;min-height:44px;padding:4px 10px;text-decoration:none;color:var(--ink);border-left:3px solid transparent;background:var(--surface)}
+nav.areas a:hover{border-left-color:var(--accent)}
+nav.areas .n{margin-left:auto;color:var(--muted);font-size:.85rem;font-variant-numeric:tabular-nums}
+/* dots */
+.dot{width:10px;height:10px;border-radius:50%;flex:none;display:inline-block}
+.dot.red{background:var(--fail)}.dot.amber{background:var(--xfail);box-shadow:0 0 0 2px var(--surface),0 0 0 3px var(--xfail)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+/* tree */
+details>summary{list-style:none;cursor:pointer}
+summary::-webkit-details-marker{display:none}
+.tw{width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(-45deg);transition:transform .15s;flex:none}
+details[open]>summary>.tw{transform:rotate(45deg)}
+@media (prefers-reduced-motion:reduce){.tw{transition:none}}
+details.area{background:var(--surface);border:1px solid var(--line);margin:0 0 10px;scroll-margin-top:140px}
+details.area>summary{min-height:56px;display:flex;align-items:center;gap:8px 12px;padding:10px 14px;flex-wrap:wrap}
+.aname{font:600 1.25rem var(--f-d)}
+.afolder{color:var(--muted);font:.8rem var(--f-m)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border:1px solid var(--line);font-size:.82rem;font-variant-numeric:tabular-nums;background:var(--bg)}
+.chip.zero{opacity:.55}
+.sw{width:10px;height:10px;display:inline-block;background:var(--c);flex:none}
+.pass{--c:var(--pass)}.fail,.xpass{--c:var(--fail)}.xfail{--c:var(--xfail)}.skip{--c:var(--skip)}
+.ashown{flex:1 1 100%;color:var(--muted);font-size:.85rem;padding-left:20px}
+.abody{padding:0 14px 12px;display:grid;gap:8px}
+details.thing{border:1px solid var(--line);border-left:4px solid var(--accent);scroll-margin-top:140px}
+details.thing>summary{min-height:52px;display:flex;align-items:center;gap:6px 10px;padding:8px 12px;flex-wrap:wrap}
+.tname{font:600 1.05rem var(--f-d);overflow-wrap:anywhere}
+.type{font:600 .72rem var(--f-b);letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border:1px solid currentColor;color:var(--accent)}
+.feeds{margin-left:auto;display:inline-flex;align-items:center;min-height:44px;font-size:.88rem;color:var(--muted)}
+.feeds a{padding:0 4px;display:inline-flex;align-items:center;min-height:44px}
+.tcount{color:var(--muted);font-size:.85rem;font-variant-numeric:tabular-nums}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:0 12px 8px;padding:6px 10px;border:1px dashed var(--example);font-size:.88rem}
+.flow b{font-family:var(--f-d)}
+.steps{display:inline-flex;gap:4px}.steps i{width:22px;height:6px;background:var(--line)}.steps i.on{background:var(--example)}
+.tbody{padding:0 12px 10px;display:grid;gap:6px}
+details.method{background:var(--tint);scroll-margin-top:140px}
+details.method>summary{min-height:48px;display:flex;align-items:center;gap:6px 10px;padding:6px 10px;flex-wrap:wrap}
+.mname{font:600 .95rem var(--f-m);overflow-wrap:anywhere}
+.desc{margin:0;padding:0 10px 10px 28px;color:var(--muted);max-width:62rem}
+.tablebox{background:var(--surface);overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.92rem;table-layout:fixed}
+col.c1{width:38%}col.c2{width:34%}col.c3{width:16%}col.c4{width:12%}
+th{text-align:left;font-weight:600;font-size:.78rem;color:var(--muted);padding:6px 10px;border-bottom:1px solid var(--line)}
+td{padding:8px 10px;border-top:1px solid var(--line);vertical-align:top;overflow-wrap:anywhere}
+tr.why td{border-top:0;padding-top:0;color:var(--c);font-size:.88rem}
+tr.why td::before{content:attr(data-k);font-weight:600;margin-right:6px}
+code.args{display:block;font:.78rem/1.4 var(--f-m);color:var(--muted);margin-top:2px}
+.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill{display:inline-flex;align-items:center;gap:6px;font-weight:600;white-space:nowrap;color:var(--c)}
+tbody.st-skip td:first-child{box-shadow:inset 4px 0 var(--skip)}
+mark{background:color-mix(in srgb,var(--accent) 25%,transparent);color:inherit}
+.foot{margin-top:24px;color:var(--muted);font-size:.85rem}
+@media (max-width:900px){
+.shell{grid-template-columns:minmax(0,1fr)}
+nav.areas{position:static}
+nav.areas ul{grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr));gap:6px}
+nav.areas a{border:1px solid var(--line)}
+}
+@media (max-width:640px){
+h1{font-size:1.55rem}
+.tools{position:static}
+.chips{margin-left:0;flex:1 1 100%}
+.feeds{margin-left:0}
+.desc{padding-left:10px}
+colgroup,thead{display:none}
+table,tbody,tr,td{display:block}
+tbody{border-top:1px solid var(--line);padding:6px 0}
+td{border:0;padding:2px 10px}
+td.r{display:inline-block}
+td.num{display:inline-block;text-align:left}
+td[data-l]::before{content:attr(data-l);display:block;font-size:.72rem;color:var(--muted)}
+td.r::before,td.num::before{display:none}
+}
+</style>
+
+<div class="wrap">
+  <p><span class="mock">Layout mockup for TESTDOC-1 &ldquo;Tests draw the docs&rdquo;</span></p>
+  <h1>Trading tests &middot; run 20261008-154939</h1>
+  <p class="when">RenerExternalEnergyPlatform / TradingApp &middot; 137.99 s &middot; sets: Baseline, MigrationTarget (expected red)</p>
+  <div class="headline" id="headline"></div>
+
+  <section class="req" aria-labelledby="req-h">
+    <header><h2 id="req-h">Requirement map</h2><span class="mock">Example &mdash; needs [Requirement] tags</span></header>
+    <ol>
+      <li class="green"><span class="rid">REQ-ADMIE-1</span><span class="rt">Each ADMIE settlement file is imported once</span><a href="#t-AdmieRepositoryTests" data-jump>2 tests pass &middot; AdmieRepository, AdmieDataFetchJob</a></li>
+      <li class="amber"><span class="rid">REQ-BAT-1</span><span class="rt">Signed-in traders get battery availability per slot</span><a href="#t-BatteryAvailabilityEndpointTests" data-jump>1 skipped (known bug) &middot; BatteryAvailabilityEndpoint</a></li>
+      <li class="xf"><span class="rid">REQ-MERGE-1</span><span class="rt">Parks replace Sites after the DB merge</span><a href="#t-ParksTargetTests" data-jump>8 expected red &middot; ParksTarget</a></li>
+    </ol>
+  </section>
+
+  <div class="tools" role="search">
+    <label class="sr" for="q">Search tests</label>
+    <input id="q" type="search" placeholder="Search scenario, method, class or reason" autocomplete="off">
+    <button type="button" id="openAll">Expand all</button>
+    <button type="button" id="closeAll">Collapse all</button>
+    <output id="qout" for="q" aria-live="polite"></output>
+  </div>
+  <p class="legend"><span><span class="dot red"></span> failed or unexpectedly passed</span><span><span class="dot amber"></span> skipped, needs a look</span><span><span class="sw xfail"></span> expected red (migration target)</span></p>
+
+  <div class="shell">
+    <nav class="areas" aria-label="Business areas"><h2>Areas</h2><ul id="nav"></ul></nav>
+    <main id="tree"></main>
+  </div>
+  <p class="foot">Scenarios, results, times, descriptions and reasons are real rows from <code>testdoc-results.v1.json</code>. The requirement map, the ADMIE import flow line and the &ldquo;Feeds&rdquo; links are examples: RENER tests carry no [Requirement] or [Flow] tags yet, and the Feeds targets are read off each method&rsquo;s description.</p>
+</div>
+
+<script>
+(function(){
+var RUN={total:756,pass:702,xfail:53,skip:1,fail:0};
+var AREAS=[
+ {key:"Admie",name:"ADMIE settlement",areaTotal:16,things:[
+  {cls:"AdmieDataFetchJobTests",feeds:["settlement reporting",null],flow:1},
+  {cls:"AdmieIspResultsParserTests",feeds:["ADMIE import job","AdmieDataFetchJobTests"],flow:2},
+  {cls:"AdmieRepositoryTests",feeds:["ADMIE import job","AdmieDataFetchJobTests"],flow:3}]},
+ {key:"BatteryAvailability",name:"Battery availability",areaTotal:4,things:[
+  {cls:"BatteryAvailabilityEndpointTests",feeds:["HENEX declarations",null]}]},
+ {key:"Market",name:"Market parameters",areaTotal:51,things:[
+  {cls:"MarketServiceTests",feeds:["Platform market-parameters screen",null]}]},
+ {key:"MigrationTarget",name:"DB merge target (EMS-1527)",areaTotal:53,things:[
+  {cls:"ParksTargetTests",feeds:["EMS-1527 DB merge",null]}]}
+];
+var D={
+"AdmieDataFetchJobTests.FetchAllAsync":"Scheduled job that downloads the latest ADMIE settlement files and stores each portfolio's 96 quarter-hour values once; settlement reporting depends on it.",
+"AdmieIspResultsParserTests.ParseStorageUnitRows":"Reads the ADMIE settlement Excel file and returns each battery portfolio's up and down energy per time slot; the ADMIE settlement import uses it to load actual results.",
+"AdmieRepositoryTests.IsFileEntryIngested":"Tells whether an ADMIE file path was already imported; the ADMIE import job uses it to skip files it has loaded.",
+"AdmieRepositoryTests.GetPortfolios":"Lists portfolio ids and names; the ADMIE import uses it to know which portfolios to fetch settlement data for.",
+"AdmieRepositoryTests.InsertFileEntry":"Stores an ADMIE settlement file with its parsed values and keeps only the newest version as current; the ADMIE import job uses it.",
+"BatteryAvailabilityEndpointTests.BatteryAvailability":"Works out how much battery capacity can buy or sell between the cheapest and dearest price slots; HENEX declarations call it internally, no UI screen calls the endpoint.",
+"MarketServiceTests.GetMarketParameterById":"Returns one market parameter, or reports it missing; the Platform form opens it for editing.",
+"MarketServiceTests.GetAllMarketParameters":"Lists all market parameters; the Platform market-parameters screen shows them and the declarations rely on them.",
+"MarketServiceTests.UpdateMarketParameter":"Changes an existing market parameter, or reports it missing; the Platform form saves edits to settings used in HENEX declarations.",
+"MarketServiceTests.CreateMarketParameter":"Saves a new market parameter and returns its id; the Platform market-parameters form uses it to add settings used for HENEX declarations.",
+"MarketServiceTests.DeleteMarketParameter":"Deletes a market parameter, or reports it missing; the Platform market-parameters screen offers this to remove outdated settings.",
+"ParksTargetTests.PortfolioParksColumns":"Target for the DB merge (EMS-1527): the park-to-portfolio link holds the validity dates and active flag PortfolioSites held, so declarations know which parks belong to a portfolio.",
+"ParksTargetTests.ParksCommercialColumns":"Target for the DB merge (EMS-1527): the commercial parks table keeps the columns the old Sites table held, so Trading no longer needs a separate Sites table.",
+"ParksTargetTests.SiteParametersColumns":"Target for the DB merge (EMS-1527): park parameters are keyed by ParkId, not the retired SiteId, so the optimizer reads parameters per park.",
+"ParksTargetTests.ParksCommercialProviderId":"Target for the DB merge (EMS-1527): each commercial park links to its energy Provider through a foreign key, replacing the link Sites used to hold."
+};
+var SC="Expected columns {\"Id\", \"Address\", \"AggregatorId\", \"CompanyId\", \"Contact\", \"Description\", \"Edreth\", \"GridConnectionDate\", \"Latitude\", \"Longitude\", \"MandateEnd\", \"MandateStart\", \"PlantName\", \"PlantType\", \"ServiceLevel\", \"StationCode\"} to contain ";
+var PC="Expected columns {\"ParkId\", \"PortfolioId\"} to contain ";
+var PCW=" because the park-to-portfolio table keeps the PortfolioSites columns, with SiteId renamed to ParkId.";
+// [class, method, scenario, expected, status, seconds, args, message]
+var T=[
+["AdmieDataFetchJobTests","FetchAllAsync","When file has values","Stores each cell under its utc slot","pass",5.6416],
+["AdmieDataFetchJobTests","FetchAllAsync","When run twice","Skips the ingested file","pass",1.4292],
+["AdmieDataFetchJobTests","FetchAllAsync","When file has zeros","Stores twelve rows of 96 zero entries","pass",2.1168],
+["AdmieIspResultsParserTests","ParseStorageUnitRows","Storage unit section","Stamps each row with its portfolio id","pass",0.0161],
+["AdmieIspResultsParserTests","ParseStorageUnitRows","October dst change","Maps the repeated wall time to distinct utc instants","pass",0.0155],
+["AdmieIspResultsParserTests","ParseStorageUnitRows","Values including text numbers","Are read per time slot","pass",0.0203],
+["AdmieIspResultsParserTests","ParseStorageUnitRows","Missing storage unit section","Throws","pass",0.0152],
+["AdmieIspResultsParserTests","ParseStorageUnitRows","July timestamps","Are converted from athens summer time to utc","pass",0.828],
+["AdmieIspResultsParserTests","ParseStorageUnitRows","Reads both fcr and afrr sheets","Tagging rows with their sheet no","pass",0.015],
+["AdmieIspResultsParserTests","ParseStorageUnitRows","Storage unit section","Stamps up as absorb and down as inject","pass",0.0169],
+["AdmieIspResultsParserTests","ParseStorageUnitRows","","Tags fcr sheet rows as fcr and afrr sheet rows as afrr","pass",0.015],
+["AdmieIspResultsParserTests","ParseStorageUnitRows","Storage unit section","Returns up and down rows of portfolios only","pass",0.0302],
+["AdmieRepositoryTests","IsFileEntryIngested","With only another path stored","Returns false","pass",0.1511],
+["AdmieRepositoryTests","IsFileEntryIngested","With stored path","Returns true","pass",0.0103],
+["AdmieRepositoryTests","GetPortfolios","With seeded portfolios","Returns id and name of each","pass",0.0106],
+["AdmieRepositoryTests","InsertFileEntry","With older version after newer","Keeps newest as last version and reuses row","pass",0.1232],
+["BatteryAvailabilityEndpointTests","BatteryAvailability","Without auth","Returns 401","pass",0.0032],
+["BatteryAvailabilityEndpointTests","BatteryAvailability","With auth, existing portfolio","Returns 200 with valid shape","skip",0.001,"","The battery availability page crashes with a server error: it never reads the time step from the request, so it divides by zero"],
+["BatteryAvailabilityEndpointTests","BatteryAvailability","With auth, non existing portfolio","Returns 404","pass",0.0081],
+["BatteryAvailabilityEndpointTests","BatteryAvailability","Slot entries","Have valid structure","pass",1.273],
+["MarketServiceTests","GetMarketParameterById","When repo returns entity","Maps and returns","pass",0.0035],
+["MarketServiceTests","GetMarketParameterById","When repo returns null","Throws not found exception without mapping","pass",0.157],
+["MarketServiceTests","GetAllMarketParameters","Loads entities","Maps to response list","pass",0.005],
+["MarketServiceTests","CreateMarketParameter","Maps request to entity, then forwards to repo","Returns repo id","pass",0.0086],
+["MarketServiceTests","UpdateMarketParameter","When entity exists, maps request to entity","Then forwards to repo","pass",0.0045],
+["MarketServiceTests","UpdateMarketParameter","When repo returns null, throws not found exception","And does not call update","pass",0.0073],
+["MarketServiceTests","DeleteMarketParameter","When entity exists","Forwards id to repo","pass",0.0134],
+["MarketServiceTests","DeleteMarketParameter","When repo returns null, throws not found exception","And does not call delete","pass",0.004],
+["ParksTargetTests","PortfolioParksColumns","Given portfolio sites column","Contain it","xfail",0.0007,"columnName: \"DateToUTC\"",PC+"\"DateToUTC\""+PCW],
+["ParksTargetTests","PortfolioParksColumns","Given portfolio sites column","Contain it","xfail",0.0006,"columnName: \"DateFromUTC\"",PC+"\"DateFromUTC\""+PCW],
+["ParksTargetTests","PortfolioParksColumns","Given portfolio sites column","Contain it","xfail",0.0008,"columnName: \"IsActive\"",PC+"\"IsActive\""+PCW],
+["ParksTargetTests","ParksCommercialColumns","Given sites column","Contain it","xfail",0.0014,"columnName: \"ProviderId\"",SC+"\"ProviderId\" because the old Sites table goes away and its ProviderId column moves to ParksCommercial."],
+["ParksTargetTests","ParksCommercialColumns","Given sites column","Contain it","xfail",1.4923,"columnName: \"IsActive\"",SC+"\"IsActive\" because the old Sites table goes away and its IsActive column moves to ParksCommercial."],
+["ParksTargetTests","SiteParametersColumns","When merged","Have no site id","xfail",0.0011,"","Expected columns not to be empty."],
+["ParksTargetTests","SiteParametersColumns","When merged","Contain park id","xfail",0.0008,"","Expected columns {empty} to contain \"ParkId\" because park parameters are looked up by ParkId."],
+["ParksTargetTests","ParksCommercialProviderId","When merged","Points at providers","xfail",0.0012,"","Expected targets {empty} to contain \"Providers\" because Sites.ProviderId had an FK to Providers."]
+];
+var LABEL={pass:"Passed",fail:"Failed",skip:"Skipped",xfail:"Expected red",xpass:"Unexpected pass"};
+var TYPES=[["EndpointTests","Endpoint"],["JobTests","Job"],["RepositoryTests","Repository"],["ServiceTests","Service"],["ParserTests","Parser"],["TargetTests","Schema target"]];
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]})}
+function typeOf(c){for(var i=0;i<TYPES.length;i++)if(c.slice(-TYPES[i][0].length)===TYPES[i][0])return TYPES[i][1];return "Test"}
+function shortName(c){return c.replace(/Tests$/,"")}
+function secs(s){return s<1?Math.max(1,Math.round(s*1000))+" ms":s.toFixed(2)+" s"}
+function count(rows){var c={pass:0,fail:0,skip:0,xfail:0,xpass:0};rows.forEach(function(r){c[r[4]]++});return c}
+function attn(c){return c.fail||c.xpass?"red":c.skip?"amber":""}
+function dot(c){var a=attn(c);if(!a)return "";var t=a==="red"?(c.fail+c.xpass)+" failed":c.skip+" skipped";return '<span class="dot '+a+'" title="Needs attention: '+t+'"></span><span class="sr">Needs attention: '+t+'</span>'}
+function chips(c){return '<span class="chips">'+["pass","fail","skip","xfail"].map(function(k){return '<span class="chip '+k+(c[k]?"":" zero")+'"><span class="sw"></span>'+c[k]+" "+LABEL[k].toLowerCase()+"</span>"}).join("")+"</span>"}
+function bar(c,t){return '<span class="bar" role="img" aria-label="'+c.pass+' passed, '+c.xfail+' expected red, '+c.skip+' skipped, '+c.fail+' failed">'+["pass","xfail","skip","fail"].filter(function(k){return c[k]}).map(function(k){return '<span class="seg '+k+'" style="flex:'+c[k]+'"></span>'}).join("")+"</span>"}
+
+document.getElementById("headline").innerHTML="<span>"+RUN.total+" tests: "+RUN.pass+" passed, "+RUN.xfail+" expected red, "+RUN.skip+" skipped, "+RUN.fail+" failed</span>"+bar(RUN);
+
+var tree="",nav="";
+AREAS.forEach(function(a){
+ var arows=[];a.things.forEach(function(t){arows=arows.concat(T.filter(function(r){return r[0]===t.cls}))});
+ var ac=count(arows);
+ nav+='<li><a href="#a-'+a.key+'" data-jump>'+dot(ac)+esc(a.name)+'<span class="n">'+arows.length+"</span></a></li>";
+ tree+='<details class="area" id="a-'+a.key+'"><summary><span class="tw"></span>'+dot(ac)+'<span class="aname">'+esc(a.name)+'</span><span class="afolder">'+a.key+"/</span>"+chips(ac)+'<span class="ashown">'+(arows.length<a.areaTotal?"Mockup shows "+arows.length+" of "+a.areaTotal+" tests in this area":"All "+a.areaTotal+" tests in this area")+'</span></summary><div class="abody">';
+ a.things.forEach(function(t){
+  var rows=T.filter(function(r){return r[0]===t.cls}),c=count(rows),methods=[];
+  rows.forEach(function(r){if(methods.indexOf(r[1])<0)methods.push(r[1])});
+  var feeds='<span class="feeds">Feeds:&nbsp;'+(t.feeds[1]?'<a href="#t-'+t.feeds[1]+'" data-jump>'+esc(t.feeds[0])+" &#9656;</a>":esc(t.feeds[0]))+"</span>";
+  tree+='<details class="thing" id="t-'+t.cls+'"><summary><span class="tw"></span>'+dot(c)+'<span class="tname">'+shortName(t.cls)+'</span><span class="type">'+typeOf(t.cls)+'</span><span class="tcount">'+rows.length+" scenarios</span>"+feeds+"</summary>";
+  if(t.flow)tree+='<div class="flow"><span class="mock">Example &mdash; needs [Flow] tags</span><b>ADMIE import: step '+t.flow+' of 3</b><span class="steps" aria-hidden="true">'+[1,2,3].map(function(i){return '<i class="'+(i<=t.flow?"on":"")+'"></i>'}).join("")+"</span><span>Job fetches &rarr; Parser reads &rarr; Repository stores</span></div>";
+  tree+='<div class="tbody">';
+  methods.forEach(function(m){
+   var mr=rows.filter(function(r){return r[1]===m}),mc=count(mr);
+   tree+='<details class="method"><summary><span class="tw"></span>'+dot(mc)+'<span class="mname">'+esc(m)+'</span><span class="tcount">'+mr.length+(mr.length===1?" scenario":" scenarios")+'</span></summary><p class="desc">'+esc(D[t.cls+"."+m]||"")+'</p><div class="tablebox"><table><colgroup><col class="c1"><col class="c2"><col class="c3"><col class="c4"></colgroup><thead><tr><th scope="col">Scenario</th><th scope="col">Expected</th><th scope="col">Result</th><th scope="col" class="num">Time</th></tr></thead>';
+   mr.forEach(function(r){
+    tree+='<tbody class="st-'+r[4]+'"><tr><td data-l="Scenario">'+(r[2]?esc(r[2]):'<span style="color:var(--muted)">(no scenario)</span>')+(r[6]?'<code class="args">'+esc(r[6])+"</code>":"")+'</td><td data-l="Expected">'+esc(r[3])+'</td><td class="r"><span class="pill '+r[4]+'"><span class="sw"></span>'+LABEL[r[4]]+'</span></td><td class="num" data-l="Time">'+secs(r[5])+"</td></tr>";
+    if(r[7])tree+='<tr class="why '+r[4]+'"><td colspan="4" data-k="'+(r[4]==="skip"?"Skipped because":"Still red:")+'">'+esc(r[7])+"</td></tr>";
+    tree+="</tbody>";
+   });
+   tree+="</table></div></details>";
+  });
+  tree+="</div></details>";
+ });
+ tree+="</div></details>";
+});
+document.getElementById("tree").innerHTML=tree;
+document.getElementById("nav").innerHTML=nav;
+
+var all=function(){return document.querySelectorAll("#tree details")};
+document.getElementById("openAll").onclick=function(){all().forEach(function(d){d.open=true})};
+document.getElementById("closeAll").onclick=function(){all().forEach(function(d){d.open=false})};
+document.addEventListener("click",function(e){
+ var a=e.target.closest("a[data-jump]");if(!a)return;
+ var el=document.querySelector(a.getAttribute("href"));if(!el)return;
+ e.preventDefault();var p=el;while(p){if(p.tagName==="DETAILS")p.open=true;p=p.parentElement}
+ el.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"});
+ var s=el.querySelector("summary");if(s)s.focus({preventScroll:true});
+});
+var q=document.getElementById("q"),out=document.getElementById("qout");
+function unmark(){document.querySelectorAll("#tree mark").forEach(function(m){m.replaceWith(document.createTextNode(m.textContent))});document.getElementById("tree").normalize()}
+q.addEventListener("input",function(){
+ var v=q.value.trim().toLowerCase();unmark();
+ var bodies=document.querySelectorAll("#tree tbody"),hits=0;
+ document.querySelectorAll("#tree details").forEach(function(d){d.hidden=false;if(v)d.open=false});
+ bodies.forEach(function(b){b.hidden=false});
+ if(!v){out.textContent="";return}
+ var keep=new Set();
+ bodies.forEach(function(b){
+  var m=b.closest("details.method"),th=b.closest("details.thing");
+  var hay=(b.textContent+" "+m.querySelector("summary").textContent+" "+th.querySelector(".tname").textContent+" "+th.querySelector(".type").textContent).toLowerCase();
+  var ok=hay.indexOf(v)>=0;b.hidden=!ok;
+  if(ok){hits++;var p=b;while(p){if(p.tagName==="DETAILS"){p.open=true;keep.add(p)}p=p.parentElement}
+   b.querySelectorAll("td").forEach(function(td){td.childNodes.forEach(function(n){if(n.nodeType!==3)return;var i=n.data.toLowerCase().indexOf(v);if(i<0)return;var r=document.createRange();r.setStart(n,i);r.setEnd(n,i+v.length);r.surroundContents(document.createElement("mark"))})})}
+ });
+ document.querySelectorAll("#tree details").forEach(function(d){if(!keep.has(d))d.hidden=true});
+ out.textContent=hits?hits+(hits===1?" scenario matches":" scenarios match")+" “"+q.value.trim()+"”":"No scenario matches “"+q.value.trim()+"”. Try a class, method or reason word.";
+});
+})();
+</script>

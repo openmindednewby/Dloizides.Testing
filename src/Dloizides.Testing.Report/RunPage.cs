@@ -4,54 +4,66 @@ namespace Dloizides.Testing.Report;
 
 internal sealed class RunPage
 {
-    private const string NotBuiltYet = "Not built yet";
     private const string TestsSuffix = "Tests";
-    private const int SummaryMessageLength = 240;
-    private const string SearchBox =
-        "<div class=\"search\"><input id=\"q\" type=\"search\" placeholder=\"Type words, e.g. returns 404\" aria-label=\"Filter tests\"><output id=\"qn\" for=\"q\"></output><p id=\"qz\" class=\"none\" hidden></p></div>";
-    private const string TableHead =
-        "<thead><tr><th>Scenario</th><th>Expected</th><th>Outcome</th><th class=\"num\">Time</th></tr></thead>";
-
-    private static readonly StringComparer Ordering = StringComparer.OrdinalIgnoreCase;
 
     private readonly SetLabels labels;
-    private readonly List<(string Id, string Name)> problems = [];
-    private int testCounter;
-    private int groupCounter;
+    private readonly RunDiagrams diagrams;
 
-    private RunPage(SetLabels labels) => this.labels = labels;
+    private RunPage(SetLabels labels, RunDiagrams diagrams)
+    {
+        this.labels = labels;
+        this.diagrams = diagrams;
+    }
 
-    public static string Render(TestRun run, string title, SetLabels labels) => new RunPage(labels).Build(run, title);
+    public static string Render(TestRun run, string title, SetLabels labels) => Render(run, title, labels, RunDiagrams.None);
+
+    public static string Render(TestRun run, string title, SetLabels labels, RunDiagrams diagrams) => new RunPage(labels, diagrams).Build(run, title);
 
     private static string E(string text) => Html.Encode(text);
 
     private string Build(TestRun run, string title)
     {
+        var tests = run.Sets.SelectMany(s => s.Tests).ToList();
+        var multiProject = tests.Select(t => t.Project).Distinct(StringComparer.Ordinal).Count() > 1;
+        var tree = new RunTree(diagrams.Flows);
+        var treeHtml = tree.Render(tests, multiProject);
         var body = new StringBuilder("<a class=\"back\" href=\"../index.html\">All test runs</a>");
         body.Append($"<h1>{E(title)}</h1>");
         var took = run.Seconds > 0 ? $", took {Html.Duration(run.Seconds)}" : string.Empty;
         body.Append($"<p class=\"when\">{E(Html.RunDate(run))}{took}</p>");
-        body.Append(Headline(run)).Append(SetList(run));
-        var sections = string.Concat(run.Sets.Where(s => s.Tests.Count > 0).Select(Section));
-        if (problems.Count > 0)
-            body.Append("<ol class=\"attn\">").Append(string.Concat(problems.Select(p => $"<li><a href=\"#{p.Id}\">{E(p.Name)}</a></li>"))).Append("</ol>");
-        if (testCounter > 0)
-            body.Append(SearchBox);
-        body.Append(sections);
-        return Html.Page($"{title} {Html.RunDate(run)}", body.ToString(), testCounter > 0);
+        body.Append(Headline(run, tests)).Append(SetList(run));
+        if (tree.Problems.Count > 0)
+            body.Append("<ol class=\"attn\">").Append(string.Concat(tree.Problems.Select(p => $"<li><a href=\"#{p.Id}\">{E(p.Name)}</a></li>"))).Append("</ol>");
+        body.Append(RunSections.Diagrams(diagrams, RunTree.ThingId));
+        if (tree.TestCount > 0)
+        {
+            body.Append(RunSections.Toolbar)
+                .Append("<div class=\"shell\"><nav class=\"areas\" aria-label=\"Business areas\"><h2>Areas</h2><ul>")
+                .Append(tree.Nav).Append("</ul></nav><main id=\"tree\">").Append(treeHtml).Append("</main></div>");
+        }
+
+        var tail = diagrams.Any ? RunDiagrams.MermaidScript : string.Empty;
+        return Html.Page($"{title} {Html.RunDate(run)}", body.ToString(), tree.TestCount > 0, tail);
     }
 
-    private static string Headline(TestRun run)
+    private static string Headline(TestRun run, IReadOnlyList<TestResult> tests)
     {
         if (run.Sets.Count == 0)
             return "<p class=\"headline red\">This run has no .trx results.</p>";
+        var tally = new Tally(tests);
         var tones = run.Sets.Select(s => (s.Name, Verdict.For(s).Tone)).ToList();
         var red = tones.Where(t => t.Tone == Verdict.Red).Select(t => t.Name).ToList();
+        string text;
         if (red.Count > 0)
-            return $"<p class=\"headline red\">Needs a look: {E(string.Join(", ", red))} did not end as expected.</p>";
-        var amber = tones.Where(t => t.Tone == Verdict.Amber).Select(t => t.Name).ToList();
-        var amberText = amber.Count > 0 ? $" {string.Join(", ", amber)} is red as expected." : string.Empty;
-        return $"<p class=\"headline\">Nothing failed unexpectedly.{E(amberText)}</p>";
+            text = $"Needs a look: {string.Join(", ", red)} did not end as expected.";
+        else
+        {
+            var amber = tones.Where(t => t.Tone == Verdict.Amber).Select(t => t.Name).ToList();
+            text = "Nothing failed unexpectedly." + (amber.Count > 0 ? $" {string.Join(", ", amber)} is red as expected." : string.Empty);
+        }
+
+        var css = red.Count > 0 ? "headline red" : "headline";
+        return $"<div class=\"{css}\"><span>{E(text)} {tally.Total} tests: {E(tally.Text())}.</span>{Html.TallyBar(tally, string.Empty)}</div>";
     }
 
     private string SetList(TestRun run)
@@ -79,89 +91,4 @@ internal sealed class RunPage
         project.Length > TestsSuffix.Length && project.EndsWith(TestsSuffix, StringComparison.Ordinal)
             ? project[..^TestsSuffix.Length].TrimEnd('.')
             : project;
-
-    private string Section(TestSet set)
-    {
-        var builder = new StringBuilder($"<section class=\"setd\"><h2>{E(set.Name)}<small>{E(new Tally(set.Tests).Text())}</small></h2>{labels.Span(set.Name, "setnote")}");
-        var multiProject = set.Files.Select(f => f.Project).Distinct(StringComparer.Ordinal).Count() > 1;
-        var features = set.Tests
-            .GroupBy(t => $"{t.Project}|{t.Feature}")
-            .OrderBy(g => g.Min(t => (int)t.Status))
-            .ThenBy(g => g.Key, Ordering);
-        foreach (var feature in features)
-            builder.Append(Feature(feature.ToList(), multiProject));
-        return builder.Append("</section>").ToString();
-    }
-
-    private string Feature(List<TestResult> tests, bool multiProject)
-    {
-        var first = tests[0];
-        var tally = new Tally(tests);
-        var classes = string.Join(", ", tests.Select(t => t.Class).Distinct(StringComparer.Ordinal).Order(Ordering));
-        var projectTag = multiProject ? $"<span class=\"proj\">{E(ProjectLabel(first.Project))}</span>" : string.Empty;
-        var rows = MethodRows(tests);
-        return $"<details class=\"feat\"><summary><span class=\"fname\">{E(first.Feature)}</span>"
-            + $"<span class=\"fsep\" aria-hidden=\"true\"> · </span><span class=\"fcls\">{E(classes)}</span>{projectTag}"
-            + $"<span class=\"fcount\">{E(tally.Text())}</span>{Html.TallyBar(tally, "small")}</summary>"
-            + $"<table>{TableHead}{rows}</table></details>";
-    }
-
-    private string MethodRows(List<TestResult> tests)
-    {
-        var builder = new StringBuilder();
-        var methods = tests
-            .GroupBy(t => (t.Class, t.Method))
-            .OrderBy(g => g.Min(t => (int)t.Status))
-            .ThenBy(g => g.Key.Class, Ordering)
-            .ThenBy(g => g.Key.Method, Ordering);
-        foreach (var method in methods)
-        {
-            groupCounter++;
-            var group = $"g-{groupCounter}";
-            var first = method.First();
-            var description = first.Description.Length > 0
-                ? $"<span class=\"desc\">{E(first.Description)}</span>"
-                : "<span class=\"desc empty\">No description yet.</span>";
-            builder.Append($"<tbody class=\"mh\" data-g=\"{group}\"><tr><th colspan=\"4\" scope=\"rowgroup\"><span class=\"m\">{E(first.Method)}</span>")
-                .Append($"<span class=\"cls\">{E(first.Class)}</span>{description}</th></tr></tbody>");
-            foreach (var test in method.OrderBy(t => (int)t.Status).ThenBy(t => t.Name, Ordering))
-                builder.Append(TestRow(test, group));
-        }
-
-        return builder.ToString();
-    }
-
-    private string TestRow(TestResult test, string group)
-    {
-        testCounter++;
-        var id = $"t-{testCounter}";
-        if (test.Status is TestStatus.Fail or TestStatus.XPass)
-            problems.Add((id, test.Name));
-        var search = E(SearchText.Build(test));
-        var args = test.Args.Length > 0 ? $"<code class=\"args\">{E(test.Args)}</code>" : string.Empty;
-        var scenario = test.Scenario.Length > 0 ? E(test.Scenario) : "<span class=\"empty\">any input</span>";
-        var css = StatusText.Css(test.Status);
-        return $"<tbody class=\"t st-{css}\" id=\"{id}\" data-g=\"{group}\" data-s=\"{search}\"><tr>"
-            + $"<td data-l=\"Scenario\" title=\"{E(test.Name)}\">{scenario}{args}</td><td data-l=\"Expected\">{E(test.Expected)}</td>"
-            + $"<td data-l=\"Outcome\"><span class=\"pill {css}\"><span class=\"sw {css}\"></span>{StatusText.Label(test.Status)}</span></td>"
-            + $"<td class=\"num\" data-l=\"Time\">{Html.Duration(test.Seconds)}</td></tr>{Note(test)}</tbody>";
-    }
-
-    private static string Note(TestResult test)
-    {
-        if (test.Status == TestStatus.Skip)
-        {
-            var reason = test.Message.Length > 0 ? test.Message : "no reason given";
-            return $"<tr class=\"note\"><td colspan=\"4\"><span class=\"why\">Skipped (known product bug):</span> {E(reason)}</td></tr>";
-        }
-
-        if (test.Message.Length == 0 && test.Stack.Length == 0)
-            return string.Empty;
-        var first = test.Status == TestStatus.XFail ? NotBuiltYet : test.Message.Split('\n')[0];
-        if (first.Length > SummaryMessageLength)
-            first = first[..SummaryMessageLength] + "...";
-        var full = string.Join("\n\n", new[] { test.Message, test.Stack }.Where(p => p.Length > 0));
-        return $"<tr class=\"note {StatusText.Css(test.Status)}\"><td colspan=\"4\"><details><summary><span class=\"msg\">{E(first)}</span></summary>"
-            + $"<pre>{E(full)}</pre></details></td></tr>";
-    }
 }

@@ -10,13 +10,13 @@ internal static class Html
 
     public static string Encode(string text) => WebUtility.HtmlEncode(text);
 
-    public static string Page(string title, string body, bool withScript)
+    public static string Page(string title, string body, bool withScript, string tail = "")
     {
         var script = withScript ? $"<script>{Assets.Js}</script>" : string.Empty;
         return "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\">"
             + "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
             + $"<title>{Encode(title)}</title><style>{Assets.Css}</style></head>"
-            + $"<body><div class=\"wrap\">{body}</div>{script}</body></html>";
+            + $"<body><div class=\"wrap\">{body}</div>{script}{tail}</body></html>";
     }
 
     public static string Duration(double seconds)

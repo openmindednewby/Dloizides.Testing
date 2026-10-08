@@ -1,3 +1,5 @@
+using static Dloizides.Testing.Report.Tests.DiagramSamples;
+
 namespace Dloizides.Testing.Report.Tests;
 
 [MethodUnderTest("AC05", "Colours each declared requirement by the results of the tests that cover it, empty when none do.")]
@@ -7,20 +9,32 @@ public class RequirementMapTests
     [Fact]
     public void AC05_WithMixedCoverageResults_ColoursEachRequirementByItsTests()
     {
-        const string given = "requirements AC-01..AC-03 declared; tests covering AC-01 (pass) and AC-02 (one pass, one fail)";
-        const string when = "the requirement map is rendered";
-        const string then = "AC-01 green, AC-02 red, AC-03 empty box";
+        ResultsRequirement[] requirements = [Requirement("AC-01", "A"), Requirement("AC-02", "B"), Requirement("AC-03", "C")];
+        TestResult[] tests =
+        [
+            Test("SubmitTests", "Submit", "WhenValid", TestStatus.Pass) with { Covers = ["AC-01"] },
+            Test("SubmitTests", "Submit", "WhenRepeated", TestStatus.Pass) with { Covers = ["AC-02"] },
+            Test("SubmitTests", "Submit", "WhenLate", TestStatus.Fail) with { Covers = ["AC-02"] },
+        ];
 
-        Assert.Fail($"AC-05 not implemented. Given {given}; when {when}; then {then}.");
+        var map = RequirementMap.Render(requirements, tests);
+
+        Assert.Equal([("AC-01", "pass"), ("AC-02", "fail"), ("AC-03", "empty")], map.Cards.Select(c => (c.Id, c.Class)));
+        Assert.Contains("r0[\"AC-01: A\"]:::pass", map.Mermaid, StringComparison.Ordinal);
+        Assert.Contains("r1[\"AC-02: B\"]:::fail", map.Mermaid, StringComparison.Ordinal);
+        Assert.Contains("r2[\"AC-03: C\"]:::empty", map.Mermaid, StringComparison.Ordinal);
+        Assert.Contains("r1 --> m", map.Mermaid, StringComparison.Ordinal);
     }
 
     [Fact]
     public void AC06_WithCoveredIdNeverDeclared_DrawsItInUndeclaredGroup()
     {
-        const string given = "a test with [Covers('AC-99')] and no [Requirement('AC-99', ...)] anywhere";
-        const string when = "the requirement map is rendered";
-        const string then = "AC-99 drawn in an undeclared group and counted in the header";
+        ResultsRequirement[] requirements = [Requirement("AC-01", "A")];
+        TestResult[] tests = [Test("SubmitTests", "Submit", "WhenValid", TestStatus.Pass) with { Covers = ["AC-99"] }];
 
-        Assert.Fail($"AC-06 not implemented. Given {given}; when {when}; then {then}.");
+        var map = RequirementMap.Render(requirements, tests);
+
+        Assert.Contains("subgraph undeclared[\"Undeclared ids (1)\"]\n        r1[\"AC-99\"]:::pass", map.Mermaid, StringComparison.Ordinal);
+        Assert.Equal("1 requirement · 1 undeclared · 1 without tests", map.Header);
     }
 }
