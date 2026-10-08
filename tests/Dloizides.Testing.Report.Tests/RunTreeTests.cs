@@ -25,8 +25,8 @@ public class RunTreeTests
     public void Render_WithTwoClassesInArea_StatesStatusOnlyOnTheAreaRow()
     {
         var html = Page(
-            Test("SubmitTests", "Submit", "WhenValid", TestStatus.Fail),
-            Test("ViewTests", "View", "WhenSaved", TestStatus.Pass));
+            Test("SubmitTests", "Submit", "WhenValid", TestStatus.Fail) with { Feature = "Shop" },
+            Test("ViewTests", "View", "WhenSaved", TestStatus.Pass) with { Feature = "Shop" });
 
         Assert.Contains("<details class=\"grp area\" id=\"a-1-shop\"><summary><span class=\"tw\"></span><span class=\"gh\"><span class=\"gname\">Shop</span>", html, StringComparison.Ordinal);
         Assert.Equal(1, Count(html, "<span class=\"chips\">"));
@@ -56,8 +56,8 @@ public class RunTreeTests
     public void Render_WithCoveredRequirement_DrawsItsMapInsideTheClassGroup()
     {
         var html = Page(
-            Test("SubmitTests", "Submit", "WhenValid", TestStatus.Pass) with { Covers = ["AC-01"] },
-            Test("ViewTests", "View", "WhenSaved", TestStatus.Pass));
+            Test("SubmitTests", "Submit", "WhenValid", TestStatus.Pass) with { Project = "Shop.Tests", Feature = "Shop", Covers = ["AC-01"] },
+            Test("ViewTests", "View", "WhenSaved", TestStatus.Pass) with { Project = "Shop.Tests", Feature = "Shop" });
 
         var group = html.IndexOf("id=\"c-shop-tests-submittests\"", StringComparison.Ordinal);
         var map = html.IndexOf("<details class=\"rmap\"><summary>Requirement map", StringComparison.Ordinal);
@@ -70,11 +70,11 @@ public class RunTreeTests
     public void Render_WithFlowStep_LinksAreaToFlowAndFlowStepsToGroups()
     {
         var html = Page(
-            Test("FetchTests", "Fetch", "WhenDue", TestStatus.Pass) with { Feature = "Fetch", Flows = [new FlowEntry("Import", 1)] },
-            Test("ParserTests", "Parse", "WhenValid", TestStatus.Pass) with { Feature = "Parse", Flows = [new FlowEntry("Import", 2)] });
+            Test("FetchTests", "Fetch", "WhenDue", TestStatus.Pass) with { Project = "Shop.Tests", Feature = "Fetch", Flows = [new FlowEntry("Import", 1)] },
+            Test("ParserTests", "Parse", "WhenValid", TestStatus.Pass) with { Project = "Shop.Tests", Feature = "Parse", Flows = [new FlowEntry("Import", 2)] });
 
-        Assert.Contains("<p class=\"partof\">Part of: <a href=\"#f-import\">Import</a>, step 2 of 2</p>", html, StringComparison.Ordinal);
-        Assert.Contains("<figure class=\"diagram\" id=\"f-import\">", html, StringComparison.Ordinal);
+        Assert.Contains("<p class=\"partof\">Part of: <a href=\"#f-1-import\">Import</a>, step 2 of 2</p>", html, StringComparison.Ordinal);
+        Assert.Contains("<figure class=\"diagram\" id=\"f-1-import\">", html, StringComparison.Ordinal);
         Assert.Contains("<li><a href=\"#c-shop-tests-parsertests\">Step 2: Parser.Parse</a></li>", html, StringComparison.Ordinal);
     }
 
@@ -89,6 +89,26 @@ public class RunTreeTests
         var html = RunPage.Render(run, "Shop tests", SetLabels.None, RunDiagrams.Build(run, snapshot));
 
         Assert.Contains("<p class=\"partof\"><a href=\"#schema-h\">Database diagram</a></p>", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Render_WithFailingClassInsideArea_MarksItsInnerRowWithARedDot()
+    {
+        var html = Page(
+            Test("SubmitTests", "Submit", "WhenValid", TestStatus.Fail) with { Project = "Shop.Tests", Feature = "Shop" },
+            Test("ViewTests", "View", "WhenSaved", TestStatus.Pass) with { Project = "Shop.Tests", Feature = "Shop" });
+
+        Assert.Contains("<details class=\"grp thing\" id=\"c-shop-tests-submittests\"><summary><span class=\"tw\"></span><span class=\"gh\"><span class=\"dot red\"", html, StringComparison.Ordinal);
+        Assert.Contains("<details class=\"grp thing\" id=\"c-shop-tests-viewtests\"><summary><span class=\"tw\"></span><span class=\"gh\"><span class=\"gname\">", html, StringComparison.Ordinal);
+        Assert.Equal(1, Count(html, "<span class=\"chips\">"));
+    }
+
+    [Fact]
+    public void Render_WithMessageAndNoStack_SummarisesTheNoteAsFullMessage()
+    {
+        var html = Page(Test("SubmitTests", "Submit", "WhenValid", TestStatus.Fail) with { Message = "Expected 2" });
+
+        Assert.Contains("<summary>Full message</summary>", html, StringComparison.Ordinal);
     }
 
     private static TestResult Battery(string scenario, TestStatus status) =>

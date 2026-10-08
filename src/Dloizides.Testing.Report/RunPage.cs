@@ -25,7 +25,8 @@ internal sealed class RunPage
     {
         var tests = run.Sets.SelectMany(s => s.Tests).ToList();
         var multiProject = tests.Select(t => t.Project).Distinct(StringComparer.Ordinal).Count() > 1;
-        var tree = new RunTree(diagrams);
+        var things = ThingIds.For(tests);
+        var tree = new RunTree(diagrams, things);
         var treeHtml = tree.Render(tests, multiProject);
         var body = new StringBuilder("<a class=\"back\" href=\"../index.html\">All test runs</a>");
         body.Append($"<h1>{E(title)}</h1>");
@@ -34,7 +35,7 @@ internal sealed class RunPage
         body.Append(Headline(run, tests)).Append(SetList(run));
         if (tree.Problems.Count > 0)
             body.Append("<ol class=\"attn\">").Append(string.Concat(tree.Problems.Select(p => $"<li><a href=\"#{p.Id}\">{E(p.Name)}</a></li>"))).Append("</ol>");
-        body.Append(RunSections.Diagrams(diagrams, RunTree.ThingId));
+        body.Append(RunSections.Diagrams(diagrams, things.Of));
         if (tree.TestCount > 0)
         {
             body.Append(RunSections.Toolbar)

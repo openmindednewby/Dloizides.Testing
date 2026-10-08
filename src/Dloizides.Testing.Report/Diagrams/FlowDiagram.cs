@@ -9,11 +9,11 @@ internal sealed record FlowStep(int Step, string Class, IReadOnlyList<TestResult
     public string MermaidLabel => $"Step {Step}: {string.Join("<br/>", Tests.Select(MermaidText.MethodKey).Distinct(StringComparer.Ordinal).Select(MermaidText.Label))}";
 }
 
-internal sealed record FlowResult(string Name, IReadOnlyList<FlowStep> Steps, string Mermaid)
+internal sealed record FlowResult(int Number, string Name, IReadOnlyList<FlowStep> Steps, string Mermaid)
 {
-    public string FileName => $"flow-{MermaidText.Slug(Name)}.mmd";
+    public string FileName => $"flow-{Number}-{MermaidText.Slug(Name)}.mmd";
 
-    public string Anchor => $"f-{MermaidText.Slug(Name)}";
+    public string Anchor => $"f-{Number}-{MermaidText.Slug(Name)}";
 
     public int LastStep => Steps.Count == 0 ? 0 : Steps[^1].Step;
 }
@@ -27,14 +27,14 @@ internal static class FlowDiagram
             .SelectMany(t => t.Flows.Select(f => (Flow: f, Test: t)))
             .GroupBy(p => p.Flow.Name, StringComparer.Ordinal)
             .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
-            .Select(g => Flow(g.Key, g.GroupBy(p => p.Flow.Step).OrderBy(s => s.Key)
+            .Select((g, i) => Flow(i + 1, g.Key, g.GroupBy(p => p.Flow.Step).OrderBy(s => s.Key)
                 .Select(s => Step(s.Key, s.Select(p => p.Test).Distinct().ToList())).ToList()))
             .ToList();
 
     private static FlowStep Step(int step, IReadOnlyList<TestResult> tests) =>
         new(step, DiagramClass.ForWorst(tests, DiagramClass.Empty), tests);
 
-    private static FlowResult Flow(string name, IReadOnlyList<FlowStep> steps)
+    private static FlowResult Flow(int number, string name, IReadOnlyList<FlowStep> steps)
     {
         var builder = new StringBuilder("flowchart LR\n");
         builder.Append($"{Indent}subgraph flow[\"{MermaidText.Label(name)}\"]\n");
@@ -43,6 +43,6 @@ internal static class FlowDiagram
         builder.Append($"{Indent}end\n");
         for (var i = 1; i < steps.Count; i++)
             builder.Append($"{Indent}s{steps[i - 1].Step} --> s{steps[i].Step}\n");
-        return new FlowResult(name, steps, builder.Append(DiagramClass.ClassDefs(Indent)).ToString());
+        return new FlowResult(number, name, steps, builder.Append(DiagramClass.ClassDefs(Indent)).ToString());
     }
 }

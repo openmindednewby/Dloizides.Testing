@@ -18,6 +18,19 @@ public class RunDiagramsTests
     }
 
     [Fact]
+    public void Build_WithClassIdsCollidingAfterSlug_KeepsOneRequirementMapPerClass()
+    {
+        var set = new TestSet("Unit", false);
+        set.Tests.Add(Test("A.B", "Submit", "WhenValid", TestStatus.Pass) with { Project = "Shop.Tests", Covers = ["AC-01"] });
+        set.Tests.Add(Test("Tests.A.B", "View", "WhenSaved", TestStatus.Pass) with { Project = "Shop", Covers = ["AC-02"] });
+        var run = new TestRun("20261007-100000", null, [set], 0, string.Empty);
+
+        var diagrams = RunDiagrams.Build(run, null);
+
+        Assert.Equal(["c-shop-tests-a-b", "c-shop-tests-a-b-2"], diagrams.ClassMaps.Select(m => m.Id).Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
     public void Build_WithTargetTestOutsideExpectedRedSet_LeavesItsTablePlain()
     {
         const string snapshot = """

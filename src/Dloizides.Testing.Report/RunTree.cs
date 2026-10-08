@@ -13,7 +13,7 @@ internal sealed record Fold(string Kind, string? Id, Tally? Status)
     public string Lead { get; init; } = string.Empty;
 }
 
-internal sealed class RunTree(RunDiagrams diagrams)
+internal sealed class RunTree(RunDiagrams diagrams, ThingIds things)
 {
     private const string TableHead =
         "<colgroup><col class=\"c1\"><col class=\"c2\"><col class=\"c3\"><col class=\"c4\"></colgroup>"
@@ -32,8 +32,6 @@ internal sealed class RunTree(RunDiagrams diagrams)
     public int TestCount => rows.Count;
 
     public string Nav => nav.ToString();
-
-    public static string ThingId(TestResult test) => $"c-{MermaidText.Slug(test.Project)}-{MermaidText.Slug(test.Class)}";
 
     private static string E(string text) => Html.Encode(text);
 
@@ -62,7 +60,7 @@ internal sealed class RunTree(RunDiagrams diagrams)
         var body = new StringBuilder(head.Lead);
         foreach (var thing in classes)
             body.Append(Thing(thing, Fold.Inner, multiProject));
-        return Group(head, tests.Count, body.ToString());
+        return Group(head, tests, body.ToString());
     }
 
     private string AreaLead(List<TestResult> tests)
@@ -78,7 +76,7 @@ internal sealed class RunTree(RunDiagrams diagrams)
     private string Thing(List<TestResult> tests, Fold fold, bool multiProject)
     {
         var first = tests[0];
-        var thingId = ThingId(first);
+        var thingId = things.Of(first);
         var project = multiProject ? $"<span class=\"proj\">{E(first.Project)}</span>" : string.Empty;
         var anchor = fold.Id is null ? string.Empty : $"<span class=\"anc\" id=\"{E(thingId)}\"></span>";
         var head = fold with
@@ -97,7 +95,7 @@ internal sealed class RunTree(RunDiagrams diagrams)
         var body = new StringBuilder(head.Lead);
         foreach (var method in methods)
             body.Append(Method(method, Fold.Inner with { Kind = "method" }));
-        return Group(head, tests.Count, body.ToString());
+        return Group(head, tests, body.ToString());
     }
 
     private string RequirementFigure(string thingId)
@@ -115,13 +113,13 @@ internal sealed class RunTree(RunDiagrams diagrams)
             .Select(p => (p.Flow, p.Index))
             .ToList();
 
-    private static string Feeds(List<(FlowResult Flow, int Index)> steps)
+    private string Feeds(List<(FlowResult Flow, int Index)> steps)
     {
         var next = steps.Where(s => s.Index + 1 < s.Flow.Steps.Count).SelectMany(s => s.Flow.Steps[s.Index + 1].Tests)
             .DistinctBy(t => t.Class, StringComparer.Ordinal).ToList();
         if (next.Count == 0)
             return string.Empty;
-        var links = next.Select(t => $"<a href=\"#{E(ThingId(t))}\">{E(MermaidText.ShortClass(t.Class))} &#9656;</a>");
+        var links = next.Select(t => $"<a href=\"#{E(things.Of(t))}\">{E(MermaidText.ShortClass(t.Class))} &#9656;</a>");
         return $"<span class=\"feeds\">Feeds:&nbsp;{string.Join(" ", links)}</span>";
     }
 
@@ -135,14 +133,15 @@ internal sealed class RunTree(RunDiagrams diagrams)
         var body = new StringBuilder(description).Append(head.Lead).Append($"<div class=\"tablebox\"><table>{TableHead}");
         foreach (var test in tests.OrderBy(t => (int)t.Status).ThenBy(t => t.Name, Ordering))
             body.Append(rows.Row(test));
-        return Group(head, tests.Count, body.Append("</table></div>").ToString());
+        return Group(head, tests, body.Append("</table></div>").ToString());
     }
 
-    private static string Group(Fold head, int scenarios, string body)
+    private static string Group(Fold head, IReadOnlyList<TestResult> tests, string body)
     {
         var id = head.Id is null ? string.Empty : $" id=\"{E(head.Id)}\"";
         var chips = head.Status is null ? string.Empty : Badges.Chips(head.Status);
-        return $"<details class=\"grp {head.Kind}\"{id}><summary><span class=\"tw\"></span><span class=\"gh\"><span class=\"gname\">{string.Join(Separator, head.Crumbs)}</span>"
-            + $"<span class=\"tcount\">{Badges.Count(scenarios)}</span>{head.Meta}{chips}</span></summary><div class=\"gbody\">{body}</div></details>";
+        var dot = head.Status is null ? Badges.Dot(new Tally(tests)) : string.Empty;
+        return $"<details class=\"grp {head.Kind}\"{id}><summary><span class=\"tw\"></span><span class=\"gh\">{dot}<span class=\"gname\">{string.Join(Separator, head.Crumbs)}</span>"
+            + $"<span class=\"tcount\">{Badges.Count(tests.Count)}</span>{head.Meta}{chips}</span></summary><div class=\"gbody\">{body}</div></details>";
     }
 }

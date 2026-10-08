@@ -41,14 +41,14 @@ internal sealed record RunDiagrams(RequirementMapResult? Requirements, IReadOnly
         var schema = snapshotSource is null ? null : SchemaDiagram.RenderSnapshot(snapshotSource, schemaTests);
         return new RunDiagrams(requirements, FlowDiagram.Render(tests), schema)
         {
-            ClassMaps = hasRequirements ? ClassMapsOf(run.Requirements, tests) : [],
+            ClassMaps = hasRequirements ? ClassMapsOf(run.Requirements, tests, ThingIds.For(tests)) : [],
             SchemaClasses = schema is null ? new HashSet<string>(StringComparer.Ordinal) : schemaTests.Select(t => t.Class).ToHashSet(StringComparer.Ordinal),
         };
     }
 
-    private static List<ClassMap> ClassMapsOf(IReadOnlyList<ResultsRequirement> requirements, IReadOnlyList<TestResult> tests) =>
+    private static List<ClassMap> ClassMapsOf(IReadOnlyList<ResultsRequirement> requirements, IReadOnlyList<TestResult> tests, ThingIds things) =>
         tests.Where(t => t.Covers.Count > 0)
-            .GroupBy(RunTree.ThingId, StringComparer.Ordinal)
+            .GroupBy(things.Of, StringComparer.Ordinal)
             .Select(g => new ClassMap(g.Key, RequirementMap.Render(requirements.Where(r => g.Any(t => t.Covers.Contains(r.Id, StringComparer.Ordinal))).ToList(), g.ToList())))
             .ToList();
 

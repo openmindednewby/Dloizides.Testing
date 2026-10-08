@@ -24,4 +24,19 @@ public class FlowDiagramTests
         Assert.True(flow.Mermaid.IndexOf("s2[", StringComparison.Ordinal) < flow.Mermaid.IndexOf("s3[", StringComparison.Ordinal));
         Assert.Contains("s1 --> s2\n    s2 --> s3", flow.Mermaid, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void AC08_WithFlowNamesSharingASlug_GivesEachFlowItsOwnAnchorAndFile()
+    {
+        TestResult[] tests =
+        [
+            Test("JobTests", "Fetch", "WhenDue", TestStatus.Pass) with { Flows = [new FlowEntry("import-batch", 1)] },
+            Test("ParserTests", "Parse", "WhenValid", TestStatus.Pass) with { Flows = [new FlowEntry("Import Batch", 1)] },
+        ];
+
+        var flows = FlowDiagram.Render(tests);
+
+        Assert.Equal(["f-1-import-batch", "f-2-import-batch"], flows.Select(f => f.Anchor));
+        Assert.Equal(["flow-1-import-batch.mmd", "flow-2-import-batch.mmd"], flows.Select(f => f.FileName));
+    }
 }

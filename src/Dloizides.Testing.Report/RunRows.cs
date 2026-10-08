@@ -46,7 +46,7 @@ internal sealed class RunRows
         if (test.Status == TestStatus.Skip || (test.Message.Length == 0 && test.Stack.Length == 0))
             return string.Empty;
         var full = string.Join("\n\n", new[] { test.Message, test.Stack }.Where(p => p.Length > 0));
-        return $"<tr class=\"note {StatusText.Css(test.Status)}\"><td colspan=\"4\"><details><summary>Full message and stack</summary>"
+        return $"<tr class=\"note {StatusText.Css(test.Status)}\"><td colspan=\"4\"><details><summary>{(test.Stack.Length > 0 ? "Full message and stack" : "Full message")}</summary>"
             + $"<pre>{E(full)}</pre></details></td></tr>";
     }
 }
