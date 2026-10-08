@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Dloizides.Testing.Report.Tests" />
+    <InternalsVisibleTo Include="Dloizides.Testing.Tests" />
   </ItemGroup>
 
 </Project>

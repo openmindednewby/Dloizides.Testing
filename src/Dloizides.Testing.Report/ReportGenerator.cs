@@ -36,7 +36,7 @@ internal static class ReportGenerator
     }
 
     private static TestRun FromTrx(RunReader reader, string runPath, ReportOptions options) =>
-        RunAttributes.Attach(reader.Read(runPath), AttributeReader.ReadDirectories(options.SourceRoots), options.SourceRoots);
+        RecordedCalls.Attach(RunAttributes.Attach(reader.Read(runPath), AttributeReader.ReadDirectories(options.SourceRoots), options.SourceRoots), runPath);
 
     private static TestRun FromJson(string resultsFile, string runPath)
     {

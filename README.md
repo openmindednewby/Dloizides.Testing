@@ -118,6 +118,26 @@ search box, usable at 360 px.
 An optional `summary.json` in the run folder (`{"Set": "...", "Rows": [{"Base": "<Set>-<Project>"}]}`)
 lists the projects that were expected to run; one without a `.trx` turns its set red.
 
+## Recorded calls (sequence diagrams)
+
+Wrap a fake server's handler in `RecordingHandler` and every call through it lands in the report:
+
+```csharp
+using var henex = new HttpClient(new RecordingHandler("Trading", "HENEX", factory.Server.CreateHandler())) { BaseAddress = factory.Server.BaseAddress };
+```
+
+Each call is written with the name of the `[Fact]`/`[Theory]` that made it to `$TESTDOC_CALLS_DIR`
+(default `testdoc-calls/` beside the test assembly). Point that variable at `<run>/calls` before
+`dotnet test`; `test-report` attaches the calls to their tests in `testdoc-results.v1.json`
+(`calls: [{seq, from, to, method, path, status}]`) and draws one collapsed `sequence-<area>.mmd` per
+area. For `IHttpClientFactory`, use `AddHttpMessageHandler(() => new RecordingHandler("Trading", "HENEX"))`.
+A theory's cases share one call list, and when two target frameworks write the same test, the first file wins.
+
+```powershell
+$env:TESTDOC_CALLS_DIR = "reports/20261007-100000/calls"
+dotnet test --results-directory reports/20261007-100000/Unit-Shop.Tests --logger "trx;LogFileName=results.trx"
+```
+
 ## License
 
 MIT

@@ -33,6 +33,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Dloizides.Testing\Dloizides.Testing.csproj" />
+    <ProjectReference Include="..\..\src\Dloizides.Testing.Report\Dloizides.Testing.Report.csproj" />
     <ProjectReference Include="..\Dloizides.Testing.Tests.Samples\Dloizides.Testing.Tests.Samples.csproj" />
   </ItemGroup>
 
