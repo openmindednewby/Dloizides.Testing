@@ -20,10 +20,20 @@ public sealed class RecordingHandler : DelegatingHandler
     /// <summary>Sends the request through the fake server and records it with the response status.</summary>
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        var test = CurrentTest.Name();
-        var seq = log.Next(test);
+        var scope = TestScope.Resolve();
+        var seq = log.Next(scope);
         var response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
-        log.Write(new CallLine(test, seq, from, to, request.Method.Method, request.RequestUri?.AbsolutePath ?? string.Empty, (int)response.StatusCode));
+        log.Write(new CallLine
+        {
+            Test = scope.Test,
+            Case = scope.Case,
+            Seq = seq,
+            From = from,
+            To = to,
+            Method = request.Method.Method,
+            Path = request.RequestUri?.AbsolutePath ?? string.Empty,
+            Status = (int)response.StatusCode,
+        });
         return response;
     }
 }

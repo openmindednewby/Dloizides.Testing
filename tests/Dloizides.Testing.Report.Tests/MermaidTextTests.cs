@@ -12,4 +12,14 @@ public class MermaidTextTests
 
         Assert.Equal("a#quot;b#35;c#lt;d#gt;e#96;f g", label);
     }
+
+    [Fact]
+    public void Label_WithSemicolonQuoteAndHash_EncodesEachOnce()
+    {
+        const string text = "a\"b;c#d";
+
+        var label = MermaidText.Label(text);
+
+        Assert.Equal("a#quot;b#59;c#35;d", label);
+    }
 }

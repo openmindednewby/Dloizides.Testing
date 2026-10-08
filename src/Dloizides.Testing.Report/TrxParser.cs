@@ -5,7 +5,6 @@ namespace Dloizides.Testing.Report;
 
 internal static class TrxParser
 {
-    private const string TestsSuffix = "Tests";
     private static readonly string[] KnownFrameworks = ["nunit", "mstest", "xunit"];
 
     public static TrxFile Parse(string xml, TrxContext context, IReadOnlyDictionary<string, string> descriptions)
@@ -27,17 +26,7 @@ internal static class TrxParser
         return new TrxFile(tests, Time(times, "start"), Time(times, "finish"));
     }
 
-    public static string FeatureOf(string className, string project, string setName)
-    {
-        var rest = className.StartsWith(project + ".", StringComparison.Ordinal) ? className[(project.Length + 1)..] : className;
-        var segments = rest.Split('.');
-        if (segments.Length > 1 && segments[0] == setName)
-            segments = segments[1..];
-        if (segments.Length > 1)
-            return segments[0];
-        var head = BeforeFirst(segments[0], '+');
-        return head.EndsWith(TestsSuffix, StringComparison.Ordinal) ? head[..^TestsSuffix.Length] : head;
-    }
+    public static string FeatureOf(string className, string project, string setName) => FeatureArea.Of(className, project, setName);
 
     private static TestResult ToResult(
         XElement result,
@@ -93,12 +82,6 @@ internal static class TrxParser
     private static string BeforeLast(string text, char separator)
     {
         var index = text.LastIndexOf(separator);
-        return index >= 0 ? text[..index] : text;
-    }
-
-    private static string BeforeFirst(string text, char separator)
-    {
-        var index = text.IndexOf(separator, StringComparison.Ordinal);
         return index >= 0 ? text[..index] : text;
     }
 }

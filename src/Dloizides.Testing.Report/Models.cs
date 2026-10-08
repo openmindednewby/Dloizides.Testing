@@ -45,6 +45,8 @@ internal sealed record TestRun(string Name, DateTime? Date, IReadOnlyList<TestSe
     public string? Sha { get; init; }
     public string? StartedAt { get; init; }
     public string? FinishedAt { get; init; }
+
+    public int UnattributedCalls { get; init; }
 }
 
 internal sealed record MethodNameParts(string Method, string Scenario, string Expected);

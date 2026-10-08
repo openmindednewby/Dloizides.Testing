@@ -33,6 +33,8 @@ internal sealed class RunPage
         var took = run.Seconds > 0 ? $", took {Html.Duration(run.Seconds)}" : string.Empty;
         body.Append($"<p class=\"when\">{E(Html.RunDate(run))}{took}</p>");
         body.Append(Headline(run, tests)).Append(SetList(run));
+        if (run.UnattributedCalls > 0)
+            body.Append($"<p class=\"when\">{run.UnattributedCalls} calls not attributed to a test</p>");
         if (tree.Problems.Count > 0)
             body.Append("<ol class=\"attn\">").Append(string.Concat(tree.Problems.Select(p => $"<li><a href=\"#{p.Id}\">{E(p.Name)}</a></li>"))).Append("</ol>");
         body.Append(RunSections.Diagrams(diagrams, things.Of));

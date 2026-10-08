@@ -150,7 +150,7 @@ internal static partial class AttributeReader
                 read.Features.Add(FeatureOf(described, arguments));
                 break;
             case "Feature" when first?.Text is { } feature:
-                target.Feature = feature;
+                target.Feature ??= feature;
                 break;
             case "UseCase" when first?.Text is { } useCase:
                 target.UseCases.Add(new UseCaseEntry { Text = useCase, Actor = Named(arguments, ActorName) });

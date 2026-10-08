@@ -12,11 +12,10 @@ public class FeatureDocsTests
 {
     private const StringComparison Ordinal = StringComparison.Ordinal;
 
-    private static readonly ResultsFeature Battery = new() { Name = "Battery availability", Why = "Shows the capacity.", Context = "Called by HENEX.", Owner = string.Empty };
-
     [Fact]
     public void FD1_WithOneClassArea_ShowsTitleKindTagAndMonoPath()
     {
+        var battery = new ResultsFeature { Name = "Battery availability", Why = "Shows the capacity.", Context = "Called by HENEX.", Owner = string.Empty };
         var html = Page([], BatteryTest("WithAuth", TestStatus.Pass) with { Feature = "BatteryAvailability" });
 
         Assert.Contains("<span class=\"gname\"><span class=\"ftitle\">Battery availability</span><span class=\"kind\">Endpoint</span></span>", html, Ordinal);
@@ -39,12 +38,13 @@ public class FeatureDocsTests
     [Fact]
     public void FD2_WithAssemblyFeature_ReadsWhyContextAndOwner()
     {
+        var battery = new ResultsFeature { Name = "Battery availability", Why = "Shows the capacity.", Context = "Called by HENEX.", Owner = string.Empty };
         const string source = """
             [assembly: Feature("Battery availability", Why = "Shows the capacity.", Context = "Called by HENEX.", Owner = "Trading")]
             namespace Shop.Tests;
             public class BatteryTests { }
             """;
-        ResultsFeature[] expected = [Battery with { Owner = "Trading" }];
+        ResultsFeature[] expected = [battery with { Owner = "Trading" }];
 
         var read = AttributeReader.Parse(source, "Shop.Tests/FeatureInfo.cs");
 
@@ -56,18 +56,20 @@ public class FeatureDocsTests
     [Fact]
     public void FD2_WithFeatureAndUseCaseInRun_RoundTripsThroughResultsJson()
     {
-        var run = Run([Battery], BatteryTest("WithAuth", TestStatus.Pass) with { UseCases = [UseCase("Get capacity", "API caller")] });
+        var battery = new ResultsFeature { Name = "Battery availability", Why = "Shows the capacity.", Context = "Called by HENEX.", Owner = string.Empty };
+        var run = Run([battery], BatteryTest("WithAuth", TestStatus.Pass) with { UseCases = [UseCase("Get capacity", "API caller")] });
 
         var back = ResultsJsonReader.Read(ResultsJsonWriter.Write(run));
 
-        Assert.Equal([Battery], back.Features);
+        Assert.Equal([battery], back.Features);
         Assert.Equal([UseCase("Get capacity", "API caller")], back.Sets[0].Tests[0].UseCases);
     }
 
     [Fact]
     public void FD3_WithDeclaredFeature_DrawsWhyCardFirstWithOwnerNotSet()
     {
-        var html = Page([Battery], BatteryTest("WithAuth", TestStatus.Pass) with { Feature = "BatteryAvailability", Description = "Returns capacity per slot." });
+        var battery = new ResultsFeature { Name = "Battery availability", Why = "Shows the capacity.", Context = "Called by HENEX.", Owner = string.Empty };
+        var html = Page([battery], BatteryTest("WithAuth", TestStatus.Pass) with { Feature = "BatteryAvailability", Description = "Returns capacity per slot." });
 
         Assert.Contains("<div class=\"whycard\"><dl><dt>Why</dt><dd>Shows the capacity.</dd><dt>Context</dt><dd>Called by HENEX.</dd><dt>Owner</dt><dd class=\"unset\">not set</dd></dl></div>", html, Ordinal);
         Assert.InRange(html.IndexOf("class=\"whycard\"", Ordinal), 0, html.IndexOf("<p class=\"desc\">", Ordinal));
@@ -124,6 +126,7 @@ public class FeatureDocsTests
     [Fact]
     public void FD7_WithEverySection_OrdersWhyUseCasesFlowSequenceScenarios()
     {
+        var battery = new ResultsFeature { Name = "Battery availability", Why = "Shows the capacity.", Context = "Called by HENEX.", Owner = string.Empty };
         var test = BatteryTest("WithAuth", TestStatus.Pass) with
         {
             UseCases = [UseCase("Get capacity", "API caller")],
@@ -131,7 +134,7 @@ public class FeatureDocsTests
             Calls = [new ResultsCall { Seq = 1, From = "Caller", To = "AccountController", Method = "GET", Path = "/battery", Status = 200 }],
         };
 
-        var html = Page([Battery], test);
+        var html = Page([battery], test);
 
         int[] at = [Index(html, "class=\"whycard\""), Index(html, "class=\"usecases\""), Index(html, "<div class=\"areaflow\">"), Index(html, "<details class=\"seq\">"), Index(html, "<table>")];
         Assert.DoesNotContain(-1, at);
@@ -142,7 +145,8 @@ public class FeatureDocsTests
     [Fact]
     public void FD7_WithoutRecordedCalls_DrawsNoSequence()
     {
-        var html = Page([Battery], BatteryTest("WithAuth", TestStatus.Pass));
+        var battery = new ResultsFeature { Name = "Battery availability", Why = "Shows the capacity.", Context = "Called by HENEX.", Owner = string.Empty };
+        var html = Page([battery], BatteryTest("WithAuth", TestStatus.Pass));
 
         Assert.DoesNotContain("<details class=\"seq\">", html, Ordinal);
     }

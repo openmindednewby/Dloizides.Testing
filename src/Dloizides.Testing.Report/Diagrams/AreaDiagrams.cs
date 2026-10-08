@@ -14,7 +14,7 @@ internal static class UseCaseDiagram
     public static IReadOnlyList<AreaDiagram> Render(IReadOnlyList<TestResult> tests) =>
         tests.Where(t => t.UseCases.Count > 0)
             .GroupBy(t => t.Feature, StringComparer.Ordinal)
-            .Select(g => new AreaDiagram(g.Key, $"usecases-{MermaidText.Slug(g.Key)}.mmd", Draw(g.ToList()), Caption))
+            .Select(g => new AreaDiagram(g.Key, $"usecases-{MermaidText.FileStem(g.Key)}.mmd", Draw(g.ToList()), Caption))
             .ToList();
 
     private static string Draw(List<TestResult> tests)
@@ -46,7 +46,7 @@ internal static class SequenceDiagram
         tests.Where(t => t.Calls.Count > 0)
             .GroupBy(t => t.Feature, StringComparer.Ordinal)
             .Select(g => g.OrderBy(t => (int)t.Status).ThenBy(t => t.Name, StringComparer.Ordinal).First())
-            .Select(t => new AreaDiagram(t.Feature, $"sequence-{MermaidText.Slug(t.Feature)}.mmd", Draw(t.Calls), $"recorded calls of {t.Name}"))
+            .Select(t => new AreaDiagram(t.Feature, $"sequence-{MermaidText.FileStem(t.Feature)}.mmd", Draw(t.Calls), $"recorded calls of {t.Name}"))
             .ToList();
 
     private static string Draw(IReadOnlyList<ResultsCall> calls)
@@ -69,5 +69,5 @@ internal static class SequenceDiagram
         return builder.ToString();
     }
 
-    private static string Text(string text) => MermaidText.Label(text).Replace(";", "#59;", StringComparison.Ordinal);
+    private static string Text(string text) => MermaidText.Label(text);
 }

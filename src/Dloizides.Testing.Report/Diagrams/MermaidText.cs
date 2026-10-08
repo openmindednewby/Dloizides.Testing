@@ -22,6 +22,7 @@ internal static partial class MermaidText
                 '<' => "#lt;",
                 '>' => "#gt;",
                 '`' => "#96;",
+                ';' => "#59;",
                 '\r' or '\n' or '\t' => " ",
                 _ => c.ToString(),
             });
@@ -42,6 +43,8 @@ internal static partial class MermaidText
         return slug.Length == 0 ? "flow" : slug;
     }
 
+    public static string FileStem(string name) => $"{Slug(name)}-{Fnv(name):x8}";
+
     public static string ShortClass(string className)
     {
         var bare = className[(className.LastIndexOf('+') + 1)..];
@@ -49,4 +52,14 @@ internal static partial class MermaidText
     }
 
     public static string MethodKey(TestResult test) => $"{ShortClass(test.Class)}.{test.Method}";
+
+    private static uint Fnv(string text)
+    {
+        const uint offset = 2166136261;
+        const uint prime = 16777619;
+        var hash = offset;
+        foreach (var c in text)
+            hash = (hash ^ c) * prime;
+        return hash;
+    }
 }

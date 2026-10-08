@@ -6,8 +6,8 @@ internal static class FeatureTitle
 
     public static ResultsFeature? Find(IReadOnlyList<ResultsFeature> features, string area)
     {
-        var key = Key(area);
-        return features.FirstOrDefault(feature => Key(feature.Name) == key);
+        var key = FeatureArea.Key(area);
+        return features.FirstOrDefault(feature => FeatureArea.Key(feature.Name) == key);
     }
 
     public static string Words(string name) => name.Any(char.IsWhiteSpace) ? name : Join(Split(name));
@@ -21,8 +21,6 @@ internal static class FeatureTitle
     public static string Kind(string className) => Split(Subject(className)).Count > 1 ? Badges.TypeOf(className) : string.Empty;
 
     public static string Bare(string className) => className[(className.LastIndexOf('+') + 1)..];
-
-    private static string Key(string name) => new(name.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray());
 
     private static string Subject(string className)
     {

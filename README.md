@@ -126,12 +126,30 @@ Wrap a fake server's handler in `RecordingHandler` and every call through it lan
 using var henex = new HttpClient(new RecordingHandler("Trading", "HENEX", factory.Server.CreateHandler())) { BaseAddress = factory.Server.BaseAddress };
 ```
 
-Each call is written with the name of the `[Fact]`/`[Theory]` that made it to `$TESTDOC_CALLS_DIR`
-(default `testdoc-calls/` beside the test assembly). Point that variable at `<run>/calls` before
-`dotnet test`; `test-report` attaches the calls to their tests in `testdoc-results.v1.json`
-(`calls: [{seq, from, to, method, path, status}]`) and draws one collapsed `sequence-<area>.mmd` per
-area. For `IHttpClientFactory`, use `AddHttpMessageHandler(() => new RecordingHandler("Trading", "HENEX"))`.
-A theory's cases share one call list, and when two target frameworks write the same test, the first file wins.
+Each call is written with the name of the test that made it to `$TESTDOC_CALLS_DIR` (default
+`testdoc-calls/` beside the test assembly). When the call is made by the system under test (its
+`IHttpClientFactory`: `AddHttpMessageHandler(() => new RecordingHandler("Trading", "HENEX"))`) or by a
+helper after an `await`, the test is no longer on the stack, so mark it with `TestScope` and let the
+test server carry it into the request:
+
+```csharp
+public sealed class RecordCallsAttribute : BeforeAfterTestAttribute
+{
+    public override void Before(MethodInfo methodUnderTest) => TestScope.Enter(methodUnderTest);
+    public override void After(MethodInfo methodUnderTest) => TestScope.Exit();
+}
+
+[RecordCalls]
+public class SubmitTests { }
+
+factory.Server.PreserveExecutionContext = true;
+```
+
+Point `$TESTDOC_CALLS_DIR` at `<run>/calls` before `dotnet test`; `test-report` attaches the calls to
+their tests in `testdoc-results.v1.json` (`calls: [{seq, from, to, method, path, status}]`) and draws one
+collapsed `sequence-<area>-<hash>.mmd` per area. A call no test owns is kept and counted: the run page
+says "N calls not attributed to a test". A theory draws its first case, on its first row. When several
+runs or target frameworks wrote the same test, the newest run wins, then the framework name in ordinal order.
 
 ```powershell
 $env:TESTDOC_CALLS_DIR = "reports/20261007-100000/calls"
