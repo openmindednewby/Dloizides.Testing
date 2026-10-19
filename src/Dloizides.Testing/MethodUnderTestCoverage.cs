@@ -23,7 +23,7 @@ public static class MethodUnderTestCoverage
             .ToList();
     }
 
-    /// <summary>Returns "FullClassName: Method" for every description naming no tested method or shorter than minLength.</summary>
+    /// <summary>Returns "Class: Method" per description naming no tested method or shorter than minLength.</summary>
     public static IReadOnlyList<string> Invalid(Assembly assembly, int minLength = DefaultMinimumDescriptionLength)
     {
         ArgumentNullException.ThrowIfNull(assembly);

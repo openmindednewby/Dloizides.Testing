@@ -2,10 +2,10 @@ using System.Reflection;
 
 namespace Dloizides.Testing;
 
-/// <summary>Lists declared requirements their own class never covers, and covered ids their own class never declares.</summary>
+/// <summary>Lists requirements a class declares but never covers, and covered ids it never declares.</summary>
 public static class RequirementCoverage
 {
-    /// <summary>Returns "FullClassName: Id" for every [Requirement] that no [Covers] on its class, its tests or a derived class names.</summary>
+    /// <summary>Returns "Class: Id" for each [Requirement] that no [Covers] in its class tree names.</summary>
     public static IReadOnlyList<string> Uncovered(Assembly assembly)
     {
         ArgumentNullException.ThrowIfNull(assembly);
@@ -19,7 +19,7 @@ public static class RequirementCoverage
         }));
     }
 
-    /// <summary>Returns "FullClassName[.Method]: Id" for every [Covers] id that no [Requirement] on the same class declares.</summary>
+    /// <summary>Returns "Class[.Method]: Id" for each [Covers] id no [Requirement] on its class declares.</summary>
     public static IReadOnlyList<string> Undeclared(Assembly assembly)
     {
         ArgumentNullException.ThrowIfNull(assembly);

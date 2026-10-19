@@ -2,7 +2,7 @@ using System.Reflection;
 
 namespace Dloizides.Testing;
 
-/// <summary>Carries the running test across awaits and into the system under test, so its recorded calls land on it.</summary>
+/// <summary>Carries the running test across awaits into the code under test, so recorded calls land on it.</summary>
 public static class TestScope
 {
     private static readonly AsyncLocal<CallScope?> Current = new();
