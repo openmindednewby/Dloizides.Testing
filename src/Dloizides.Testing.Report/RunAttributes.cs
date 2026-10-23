@@ -21,7 +21,7 @@ internal static class RunAttributes
     private static TestResult AttachTest(TestResult test, SourceAttributes attributes)
     {
         var declared = attributes.Test(AfterLast(test.Class, '+'), SourceMethod(test.Name));
-        return test with { Covers = declared.Covers, Flows = declared.Flows, UseCases = declared.UseCases, Feature = declared.Feature ?? test.Feature };
+        return test with { Covers = declared.Covers, Flows = declared.Flows, UseCases = declared.UseCases, Tasks = TaskTraits.Clean([.. test.Tasks, .. declared.Tasks]), Feature = declared.Feature ?? test.Feature };
     }
 
     private static ResultsRequirement ToRequirement(RequirementRecord requirement, IReadOnlyList<string> sourceRoots) => new()

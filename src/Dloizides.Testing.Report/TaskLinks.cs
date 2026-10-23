@@ -20,8 +20,8 @@ internal sealed class TaskLinks
 
     public string UrlTemplate { get; }
 
-    public static TaskLinks Create(string pattern, string urlTemplate) =>
-        new(new Regex(pattern, RegexOptions.CultureInvariant, MatchTimeout), urlTemplate);
+    public static TaskLinks Create(string? pattern, string urlTemplate) =>
+        new(pattern is null ? null : new Regex(pattern, RegexOptions.CultureInvariant, MatchTimeout), urlTemplate);
 
     public static bool IsValidPattern(string pattern)
     {
@@ -38,8 +38,8 @@ internal sealed class TaskLinks
 
     public IReadOnlyList<string> Of(TestResult test) =>
         pattern is null
-            ? []
-            : pattern.Matches($"{test.Description} {test.Name}").Select(m => m.Value).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
+            ? TaskTraits.Clean(test.Tasks)
+            : TaskTraits.Clean(test.Tasks.Concat(pattern.Matches($"{test.Description} {test.Name}").Select(m => m.Value)));
 
     public string Url(string id) =>
         UrlTemplate.Length == 0 ? string.Empty : UrlTemplate.Replace(IdToken, Uri.EscapeDataString(id), StringComparison.Ordinal);

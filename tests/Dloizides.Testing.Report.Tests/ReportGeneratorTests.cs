@@ -58,7 +58,7 @@ public sealed class ReportGeneratorTests : IDisposable
     }
 
     [Fact]
-    public void Generate_WithFlowAttributes_LinksEachStepToTheNextAndWritesTheDiagram()
+    public void Generate_WithFlowAttributes_LinksEachStepWithoutADiagram()
     {
         var source = Path.Combine(reports, "src");
         Directory.CreateDirectory(source);
@@ -88,9 +88,33 @@ public sealed class ReportGeneratorTests : IDisposable
         html.ShouldSatisfyAllConditions(
             () => html.ShouldContain("Feeds:&nbsp;<a href=\"#c-shop-tests-parsertests\">Parser &#9656;</a>"),
             () => html.ShouldContain("Part of: <a href=\"#f-1-import\">Import</a>, step 1 of 2"),
-            () => html.ShouldContain("<div class=\"mermaid\">flowchart LR"),
-            () => html.ShouldContain("<a href=\"flow-1-import.html\">Open full size</a>"),
-            () => File.ReadAllText(Path.Combine(run, "flow-1-import.mmd")).ShouldContain("s1 --> s2"));
+            () => html.ShouldContain("<div class=\"flow\" id=\"f-1-import\"><h3>Import</h3>"),
+            () => html.ShouldNotContain("class=\"mermaid\""),
+            () => File.Exists(Path.Combine(run, "flow-1-import.mmd")).ShouldBeFalse());
+    }
+
+    [Fact]
+    public void Generate_WithTaskTraitInSource_FiltersAndLinksTheTask()
+    {
+        var source = Path.Combine(reports, "src");
+        Directory.CreateDirectory(source);
+        File.WriteAllText(Path.Combine(source, "ParserTests.cs"), """
+            [Trait("Task", "EMS-1626")]
+            public class ParserTests
+            {
+                [Fact]
+                public void Parse_WhenValid_ReadsRows() { }
+            }
+            """);
+        var run = WriteRun("20261007-100000", "Unit", new SampleResult("Shop.Tests.Import.ParserTests", "Shop.Tests.Import.ParserTests.Parse_WhenValid_ReadsRows", "Passed"));
+        var options = Options(run) with { SourceRoots = [source], TaskUrl = "https://renerenergy.atlassian.net/browse/{id}" };
+
+        var html = File.ReadAllText(ReportGenerator.Generate(options).RunPage);
+
+        html.ShouldSatisfyAllConditions(
+            () => html.ShouldContain("data-v=\"EMS-1626\""),
+            () => html.ShouldContain("data-k=\"EMS-1626\""),
+            () => html.ShouldContain("href=\"https://renerenergy.atlassian.net/browse/EMS-1626\""));
     }
 
     [Fact]

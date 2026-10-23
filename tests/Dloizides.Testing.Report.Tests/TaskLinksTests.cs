@@ -23,6 +23,27 @@ public class TaskLinksTests
     }
 
     [Fact]
+    public void Of_WithTraitTaskAndPattern_ReturnsBothOnceInOrder()
+    {
+        var tasks = TaskLinks.Create(EmsPattern, string.Empty);
+        var test = Test("ParkTests", "Load", "WhenSaved", TestStatus.Pass) with { Description = "Reads parks (EMS-1527).", Tasks = ["EMS-1626", "EMS-1527"] };
+
+        var ids = tasks.Of(test);
+
+        Assert.Equal(["EMS-1527", "EMS-1626"], ids);
+    }
+
+    [Fact]
+    public void Of_WithNoPatternAndTraitTask_ReturnsTheTrait()
+    {
+        var test = Test("ParkTests", "Load", "WhenSaved", TestStatus.Pass) with { Description = "EMS-1527", Tasks = ["EMS-1626"] };
+
+        var ids = TaskLinks.None.Of(test);
+
+        Assert.Equal(["EMS-1626"], ids);
+    }
+
+    [Fact]
     public void Of_WithNoPattern_ReturnsNothing()
     {
         var test = Test("ParkTests", "Load", "WhenSaved", TestStatus.Pass) with { Description = "EMS-1527" };
@@ -64,8 +85,10 @@ public class TaskLinksTests
 
         Assert.Contains("<select id=\"fo\">", html, StringComparison.Ordinal);
         Assert.Contains("<select id=\"ff\">", html, StringComparison.Ordinal);
-        Assert.Contains("<option value=\"EMS-1527\">EMS-1527</option>", html, StringComparison.Ordinal);
-        Assert.Contains("<option value=\"-\">No task</option>", html, StringComparison.Ordinal);
+        Assert.Contains("<input id=\"fkq\" type=\"text\" role=\"combobox\"", html, StringComparison.Ordinal);
+        Assert.Contains("<li role=\"option\" id=\"fko-1\" data-v=\"EMS-1527\" aria-selected=\"false\">EMS-1527</li>", html, StringComparison.Ordinal);
+        Assert.Contains("data-v=\"-\" aria-selected=\"false\">No task</li>", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("<select id=\"fk\">", html, StringComparison.Ordinal);
         Assert.Contains("data-k=\"EMS-1527\"", html, StringComparison.Ordinal);
         Assert.Contains("href=\"https://jira.example.com/browse/EMS-1527\"", html, StringComparison.Ordinal);
         Assert.Contains("<section id=\"bytask\"", html, StringComparison.Ordinal);
@@ -90,6 +113,18 @@ public class TaskLinksTests
 
         Assert.Equal(EmsPattern, result.Options?.TaskPattern);
         Assert.Equal(Jira, result.Options?.TaskUrl);
+    }
+
+    [Fact]
+    public void Parse_WithTaskUrlOnly_LinksTraitTasks()
+    {
+        var result = OptionsParser.Parse(["run", "--task-url", Jira]);
+        var test = Test("ParkTests", "Load", "WhenSaved", TestStatus.Pass) with { Tasks = ["EMS-1626"] };
+
+        var tasks = result.Options!.Tasks;
+
+        Assert.Equal(["EMS-1626"], tasks.Of(test));
+        Assert.Equal("https://jira.example.com/browse/EMS-1626", tasks.Url("EMS-1626"));
     }
 
     [Fact]

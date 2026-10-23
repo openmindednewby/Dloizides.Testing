@@ -16,7 +16,7 @@ internal static partial class SearchText
         var parts = new[]
         {
             test.Name, methodWords, test.Scenario, test.Expected, test.Description,
-            test.Feature, StatusText.Label(test.Status), message,
+            test.Feature, StatusText.Label(test.Status), message, string.Join(' ', test.Tasks),
         };
         return string.Join(" ", parts.Where(p => p.Length > 0)).ToLowerInvariant();
     }

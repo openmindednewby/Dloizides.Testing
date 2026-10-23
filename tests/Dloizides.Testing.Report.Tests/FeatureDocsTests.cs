@@ -146,9 +146,9 @@ public class FeatureDocsTests
             Test("FetchTests", "Fetch", "WhenDue", TestStatus.Pass) with { Feature = "Fetch", Flows = [new FlowEntry("Import", 1)] },
             Test("ParserTests", "Parse", "WhenValid", TestStatus.Pass) with { Feature = "Parse", Flows = [new FlowEntry("Import", 2)] });
 
-        Assert.Contains("<figure class=\"diagram\" id=\"f-1-import\">", html, Ordinal);
+        Assert.Contains("<div class=\"flow\" id=\"f-1-import\">", html, Ordinal);
         Assert.Equal(2, Count(html, "<div class=\"areaflow\">"));
-        Assert.Equal(3, Count(html, "subgraph flow["));
+        Assert.Equal(0, Count(html, "subgraph flow["));
     }
 
     [Fact]

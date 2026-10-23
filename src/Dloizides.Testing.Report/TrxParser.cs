@@ -13,9 +13,8 @@ internal static class TrxParser
         var definitions = new Dictionary<string, XElement>(StringComparer.Ordinal);
         foreach (var unit in Children(root, "TestDefinitions").SelectMany(d => Children(d, "UnitTest")))
         {
-            var method = Children(unit, "TestMethod").FirstOrDefault();
-            if (method is not null)
-                definitions[Attr(unit, "id")] = method;
+            if (Children(unit, "TestMethod").Any())
+                definitions[Attr(unit, "id")] = unit;
         }
 
         var tests = Children(root, "Results")
@@ -37,7 +36,8 @@ internal static class TrxParser
         var testName = Attr(result, "testName");
         var paren = testName.IndexOf('(', StringComparison.Ordinal);
         var bare = paren >= 0 ? testName[..paren] : testName;
-        definitions.TryGetValue(Attr(result, "testId"), out var definition);
+        definitions.TryGetValue(Attr(result, "testId"), out var unit);
+        var definition = unit is null ? null : Children(unit, "TestMethod").First();
         var className = definition is null ? BeforeLast(bare, '.') : Attr(definition, "className");
         var parts = MethodNameSplitter.Split(definition is null ? AfterLast(bare, '.') : Attr(definition, "name"));
         var shortClass = AfterLast(className, '.');
@@ -58,6 +58,7 @@ internal static class TrxParser
             Seconds = TimeSpan.TryParse(Attr(result, "duration"), CultureInfo.InvariantCulture, out var took) ? took.TotalSeconds : 0,
             Message = Text(error, "Message").Trim(),
             Stack = Text(error, "StackTrace").TrimEnd(),
+            Tasks = unit is null ? [] : TaskTraits.FromTrx(unit),
         };
     }
 

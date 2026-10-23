@@ -47,6 +47,16 @@ h2{font:600 1.3rem/1.2 var(--f-d);margin:2rem 0 .75rem}
 .diagram figcaption a{display:inline-flex;align-items:center;min-height:44px}
 .tools{position:sticky;top:0;z-index:3;background:var(--bg);padding:10px 0;display:flex;gap:8px 10px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--line);margin-top:16px}
 .tools input{flex:1 1 16rem;min-width:0;min-height:44px;font:inherit;padding:0 12px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.combo{position:relative;flex:1 1 12rem;min-width:0;display:flex}
+.combo ul{position:absolute;top:100%;left:0;right:0;z-index:4;margin:2px 0 0;padding:4px 0;list-style:none;max-height:min(50vh,320px);overflow:auto;background:var(--surface);border:1px solid var(--line);box-shadow:0 6px 18px color-mix(in srgb,var(--ink) 18%,transparent)}
+.combo li{display:flex;align-items:center;min-height:44px;padding:0 12px;cursor:pointer;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.combo li.act,.combo li:hover{background:var(--tint);box-shadow:inset 3px 0 0 var(--accent)}
+.combo li[hidden]{display:none}
+.flows{margin:16px 0;background:var(--surface);border:1px solid var(--line);padding:12px 16px}
+.flows h2{margin:0 0 4px}.flow h3{font:600 1rem var(--f-d);margin:12px 0 4px}
+.fsteps{margin:0;padding:0;list-style:none}.fsteps li{display:flex;flex-wrap:wrap;align-items:center;gap:0 12px;padding:2px 0;border-top:1px solid var(--line);overflow-wrap:anywhere}
+.fsteps .sn{flex:0 0 4.5rem;font:600 .8rem var(--f-m);color:var(--muted)}.fsteps a{display:inline-flex;align-items:center;min-height:44px;min-width:0}
+.areaflow{border:1px solid var(--line);background:var(--bg);padding:8px 12px}.areaflow>a{font-weight:600;display:inline-flex;align-items:center;min-height:44px}
 .tools button{min-height:44px;padding:0 14px;font:600 .9rem var(--f-b);background:var(--surface);color:var(--ink);border:1px solid var(--line);cursor:pointer}
 .tools button:hover{border-color:var(--accent)}
 .tools output{color:var(--muted);font-size:.9rem;font-variant-numeric:tabular-nums;flex:1 1 100%}

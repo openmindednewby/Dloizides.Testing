@@ -5,9 +5,47 @@ namespace Dloizides.Testing.Report.Tests;
 [MethodUnderTest("AC03", "Takes the feature from [Feature] when present and falls back to TrxParser.FeatureOf when absent.")]
 [MethodUnderTest("AC04", "Keeps one flow entry per [Flow] attribute when a method carries several.")]
 [MethodUnderTest("AC18", "Reports a non-literal attribute argument with its file and line instead of silently dropping it.")]
+[MethodUnderTest("Parse", "Reads the id of every [Trait(\"Task\", ...)] on a test class or method, ignoring other traits.")]
 public class AttributeReaderTests
 {
     private const string Path = "Declarations/SubmitTests.cs";
+
+    [Fact]
+    public void Parse_WithTaskTraitsOnClassAndMethod_ReadsBoth()
+    {
+        const string source = """
+            [Trait("Task", "EMS-1626")]
+            public class SubmitTests
+            {
+                [Fact]
+                [Trait("Task", "EMS-1527")]
+                public void Submit_WhenValid_SendsIt()
+                {
+                }
+            }
+            """;
+
+        var read = AttributeReader.Parse(source, Path);
+
+        Assert.Equal(["EMS-1527", "EMS-1626"], read.Test("SubmitTests", "Submit_WhenValid_SendsIt").Tasks);
+    }
+
+    [Fact]
+    public void Parse_WithOtherOrNonLiteralTrait_IgnoresItWithoutAProblem()
+    {
+        const string source = """
+            [Trait("Category", "Docker")]
+            [Trait(Names.Task, Ids.Current)]
+            public class SubmitTests
+            {
+            }
+            """;
+
+        var read = AttributeReader.Parse(source, Path);
+
+        Assert.Empty(read.Test("SubmitTests", "Any").Tasks);
+        Assert.Empty(read.Problems);
+    }
 
     [Fact]
     public void AC01_WithTwoRequirementAttributes_ReportsBothIdsWithTextAndPath()

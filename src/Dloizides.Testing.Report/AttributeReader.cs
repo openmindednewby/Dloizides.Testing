@@ -13,7 +13,7 @@ internal static partial class AttributeReader
     private const string TypeStart =
         @"(?<=(?:(?m:^)|[;{}\]]|\b(?:public|internal|private|protected|sealed|abstract|static|partial|file|readonly|ref|unsafe|new))\s*)";
 
-    private const string Token = @"(?<=[\[,]\s*)(?:(?<asm>assembly)\s*:\s*)?(?:global::)?(?:\w+\.)*(?<attr>Requirement|Covers|Feature|Flow|UseCase)(?:Attribute)?\s*\(" + Arguments +
+    private const string Token = @"(?<=[\[,]\s*)(?:(?<asm>assembly)\s*:\s*)?(?:global::)?(?:\w+\.)*(?<attr>Requirement|Covers|Feature|Flow|UseCase|Trait)(?:Attribute)?\s*\(" + Arguments +
         @"\)|" + TypeStart + @"(?:record\s+(?:(?:class|struct)\s+)?|class\s+|struct\s+|interface\s+)(?<class>\w+)|\b(?:void|Task|ValueTask)" +
         Generic + @"\s+(?<method>\w+)\s*" + Generic + @"\s*\(|[{};]";
 
@@ -24,6 +24,8 @@ internal static partial class AttributeReader
     private const string IdName = "id";
     private const string TextName = "text";
     private const string NameName = "name";
+    private const string ValueName = "value";
+    private const string TraitName = "Trait";
     private const string ActorName = "Actor";
     private const string WhyName = "Why";
     private const string ContextName = "Context";
@@ -120,6 +122,12 @@ internal static partial class AttributeReader
     private static void Apply(Declaration declaration, SourceAttributes read, AttributeSet target)
     {
         var arguments = ArgumentSplitter.Split(declaration.Arguments);
+        if (declaration.Name == TraitName)
+        {
+            ApplyTrait(arguments, target);
+            return;
+        }
+
         var problems = arguments.Where(argument => !IsExpected(declaration.Name, argument)).ToList();
         read.Problems.AddRange(problems.Select(argument => declaration.Problem(argument.Raw)));
         if (declaration.Name == "Covers")
@@ -159,6 +167,13 @@ internal static partial class AttributeReader
                 target.Flows.Add(new FlowEntry(flow, step));
                 break;
         }
+    }
+
+    private static void ApplyTrait(IReadOnlyList<Argument> arguments, AttributeSet target)
+    {
+        var isTask = arguments.Count == TwoArguments && Bound(arguments, NameName, FirstPosition)?.Text == TaskTraits.Name;
+        if (isTask && Bound(arguments, ValueName, TextPosition)?.Text is { } task)
+            target.Tasks.Add(task);
     }
 
     private static ResultsFeature FeatureOf(string name, IReadOnlyList<Argument> arguments) => new()

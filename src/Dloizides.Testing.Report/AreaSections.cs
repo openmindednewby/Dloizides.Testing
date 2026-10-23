@@ -15,7 +15,8 @@ internal static class AreaSections
         diagram is null ? string.Empty : $"<div class=\"usecases\">{Figure(diagram)}</div>";
 
     public static string Flows(IEnumerable<FlowResult> flows) =>
-        string.Concat(flows.Select(flow => $"<div class=\"areaflow\">{RunSections.Figure(new FigureSpec(flow.Name, flow.Mermaid, flow.FileName))}</div>"));
+        string.Concat(flows.Select(flow => $"<div class=\"areaflow\"><a href=\"#{E(flow.Anchor)}\">Flow: {E(flow.Name)}</a><ol class=\"fsteps\">"
+            + string.Concat(flow.Steps.Select(s => $"<li>Step {s.Step}: {E(MermaidText.ShortClass(s.Class))}</li>")) + "</ol></div>"));
 
     public static string Sequence(AreaDiagram? diagram) =>
         diagram is null ? string.Empty : $"<details class=\"seq\"><summary>Sequence · {E(diagram.Caption)}</summary>{Figure(diagram)}</details>";

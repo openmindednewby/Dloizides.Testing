@@ -17,6 +17,7 @@ internal sealed record TestResult
     public required string Stack { get; init; }
     public string Framework { get; init; } = ResultsJson.DefaultFramework;
     public IReadOnlyList<string> Covers { get; init; } = [];
+    public IReadOnlyList<string> Tasks { get; init; } = [];
     public IReadOnlyList<FlowEntry> Flows { get; init; } = [];
     public IReadOnlyList<ResultsCall> Calls { get; init; } = [];
     public IReadOnlyList<UseCaseEntry> UseCases { get; init; } = [];

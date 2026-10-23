@@ -12,7 +12,7 @@ internal sealed record ReportOptions(
     string? TaskPattern = null,
     string? TaskUrl = null)
 {
-    public TaskLinks Tasks => TaskPattern is null ? TaskLinks.None : TaskLinks.Create(TaskPattern, TaskUrl ?? string.Empty);
+    public TaskLinks Tasks => TaskLinks.Create(TaskPattern, TaskUrl ?? string.Empty);
 
     public SetLabels Labels => new(SetLabelOverrides ?? new Dictionary<string, string>());
 

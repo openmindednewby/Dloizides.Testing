@@ -25,6 +25,18 @@ public class TrxParserTests
     }
 
     [Fact]
+    public void Parse_WithTaskPropertyAndCategory_ReadsBothTasks()
+    {
+        const string traits = "<Properties><Property><Key>Task</Key><Value>EMS-1626</Value></Property><Property><Key>Owner</Key><Value>x</Value></Property></Properties>"
+            + "<TestCategory><TestCategoryItem TestCategory=\"Task=EMS-1527\" /><TestCategoryItem TestCategory=\"Integration\" /></TestCategory><TestMethod ";
+        var xml = TrxSample.Build(new SampleResult(ClassName, ClassName + ".Save_WhenNew_ReturnsId", "Passed")).Replace("<TestMethod ", traits, StringComparison.Ordinal);
+
+        var test = TrxParser.Parse(xml, new TrxContext("Unit", Project, false), NoDescriptions).Tests.Single();
+
+        test.Tasks.ShouldBe(["EMS-1527", "EMS-1626"]);
+    }
+
+    [Fact]
     public void Parse_WithDefinitionAndDescription_ReadsClassMethodAndDescription()
     {
         var xml = TrxSample.Build(new SampleResult(ClassName, ClassName + ".Save_WhenNew_ReturnsId", "Passed"));

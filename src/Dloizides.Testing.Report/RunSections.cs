@@ -24,13 +24,12 @@ internal static class RunSections
             .Select(g => g.Key).Select(f => Option(f, FeatureTitle.Find(features, f)?.Name ?? FeatureTitle.Words(f)));
         var ids = TaskIds(tests, tasks);
         var builder = new StringBuilder("<div class=\"tools\" role=\"search\"><label class=\"sr\" for=\"q\">Search tests</label>")
-            .Append("<input id=\"q\" type=\"search\" placeholder=\"Search scenario, method, class, reason or task\" autocomplete=\"off\">")
+            .Append("<input id=\"q\" type=\"search\" placeholder=\"Search tests or tasks\" autocomplete=\"off\">")
             .Append(Select("fo", "Outcome", "Every outcome", outcomes))
             .Append(Select("ff", "Area", "Every area", areas));
         if (ids.Count > 0)
         {
-            var untagged = tests.Any(t => tasks.Of(t).Count == 0) ? Option(NoTask, "No task") : string.Empty;
-            builder.Append(Select("fk", "Task", "Every task", ids.Select(i => Option(i, i)).Append(untagged)))
+            builder.Append(TaskCombo(ids, tests.Any(t => tasks.Of(t).Count == 0)))
                 .Append("<label class=\"sr\" for=\"gb\">Group by</label><select id=\"gb\"><option value=\"area\">Group by area</option><option value=\"task\">Group by task</option></select>");
         }
 
@@ -63,6 +62,18 @@ internal static class RunSections
         return builder.Append("</section>").ToString();
     }
 
+    private static string TaskCombo(IReadOnlyList<string> ids, bool hasUntagged)
+    {
+        var values = new List<(string Value, string Label)> { (string.Empty, "Every task") };
+        values.AddRange(ids.Select(i => (i, i)));
+        if (hasUntagged)
+            values.Add((NoTask, "No task"));
+        var options = values.Select((v, i) => $"<li role=\"option\" id=\"fko-{i}\" data-v=\"{E(v.Value)}\" aria-selected=\"false\">{E(v.Label)}</li>");
+        return "<div class=\"combo\"><label class=\"sr\" for=\"fkq\">Task, type to search</label>"
+            + "<input id=\"fkq\" type=\"text\" role=\"combobox\" aria-autocomplete=\"list\" aria-expanded=\"false\" aria-controls=\"fkl\" placeholder=\"Every task\" autocomplete=\"off\" spellcheck=\"false\">"
+            + $"<input id=\"fk\" type=\"hidden\" value=\"\"><ul id=\"fkl\" role=\"listbox\" aria-label=\"Tasks\" hidden>{string.Concat(options)}</ul></div>";
+    }
+
     private static string Option(string value, string label) => $"<option value=\"{E(value)}\">{E(label)}</option>";
 
     private static string Select(string id, string label, string all, IEnumerable<string> options) =>
@@ -77,9 +88,9 @@ internal static class RunSections
             builder.Append(Requirements(map, thingId));
         if (diagrams.Flows.Count > 0)
         {
-            builder.Append("<section class=\"diagrams\" aria-labelledby=\"flows-h\"><h2 id=\"flows-h\">Flows</h2>");
+            builder.Append("<section class=\"flows\" aria-labelledby=\"flows-h\"><h2 id=\"flows-h\">Flows</h2>");
             foreach (var flow in diagrams.Flows)
-                builder.Append(Figure(new FigureSpec(flow.Name, flow.Mermaid, flow.FileName) { Id = flow.Anchor, Links = StepLinks(flow, thingId) }));
+                builder.Append($"<div class=\"flow\" id=\"{E(flow.Anchor)}\"><h3>{E(flow.Name)}</h3>{StepLinks(flow, thingId)}</div>");
             builder.Append("</section>");
         }
 
@@ -108,9 +119,13 @@ internal static class RunSections
 
     private static string StepLinks(FlowResult flow, Func<TestResult, string> thingId)
     {
-        var links = flow.Steps.SelectMany(s => s.Tests.DistinctBy(MermaidText.MethodKey, StringComparer.Ordinal)
-            .Select(t => $"<li><a href=\"#{E(thingId(t))}\">Step {s.Step}: {E(MermaidText.MethodKey(t))}</a></li>"));
-        return $"<ol class=\"fsteps\">{string.Concat(links)}</ol>";
+        var steps = flow.Steps.GroupBy(s => s.Step).OrderBy(g => g.Key).Select(g =>
+        {
+            var links = g.SelectMany(s => s.Tests).DistinctBy(MermaidText.MethodKey, StringComparer.Ordinal)
+                .Select(t => $"<a href=\"#{E(thingId(t))}\">{E(MermaidText.MethodKey(t))}</a>");
+            return $"<li><span class=\"sn\">Step {g.Key}</span>{string.Concat(links)}</li>";
+        });
+        return $"<ol class=\"fsteps\">{string.Concat(steps)}</ol>";
     }
 
     public static string Figure(FigureSpec spec)

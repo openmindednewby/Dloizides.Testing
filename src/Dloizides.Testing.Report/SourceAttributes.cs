@@ -18,13 +18,17 @@ internal sealed record AttributeProblem(string Path, int Line, string Attribute,
     };
 }
 
-internal sealed record TestAttributes(IReadOnlyList<string> Covers, string? Feature, IReadOnlyList<FlowEntry> Flows, IReadOnlyList<UseCaseEntry> UseCases);
+internal sealed record TestAttributes(IReadOnlyList<string> Covers, string? Feature, IReadOnlyList<FlowEntry> Flows, IReadOnlyList<UseCaseEntry> UseCases)
+{
+    public IReadOnlyList<string> Tasks { get; init; } = [];
+}
 
 internal sealed class AttributeSet
 {
     public List<string> Covers { get; } = [];
     public List<FlowEntry> Flows { get; } = [];
     public List<UseCaseEntry> UseCases { get; } = [];
+    public List<string> Tasks { get; } = [];
     public string? Feature { get; set; }
 }
 
@@ -46,7 +50,10 @@ internal sealed class SourceAttributes
             [.. onClass.Covers, .. onMethod.Covers],
             onMethod.Feature ?? onClass.Feature,
             [.. onClass.Flows, .. onMethod.Flows],
-            [.. onClass.UseCases, .. onMethod.UseCases]);
+            [.. onClass.UseCases, .. onMethod.UseCases])
+        {
+            Tasks = TaskTraits.Clean([.. onClass.Tasks, .. onMethod.Tasks]),
+        };
     }
 
     public string FeatureOr(string className, string method, string fallback) =>

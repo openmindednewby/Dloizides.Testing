@@ -75,8 +75,8 @@ public class RunTreeTests
             Test("ParserTests", "Parse", "WhenValid", TestStatus.Pass) with { Project = "Shop.Tests", Feature = "Parse", Flows = [new FlowEntry("Import", 2)] });
 
         Assert.Contains("<p class=\"partof\">Part of: <a href=\"#f-1-import\">Import</a>, step 2 of 2</p>", html, StringComparison.Ordinal);
-        Assert.Contains("<figure class=\"diagram\" id=\"f-1-import\">", html, StringComparison.Ordinal);
-        Assert.Contains("<li><a href=\"#c-shop-tests-parsertests\">Step 2: Parser.Parse</a></li>", html, StringComparison.Ordinal);
+        Assert.Contains("<div class=\"flow\" id=\"f-1-import\">", html, StringComparison.Ordinal);
+        Assert.Contains("<li><span class=\"sn\">Step 2</span><a href=\"#c-shop-tests-parsertests\">Parser.Parse</a></li>", html, StringComparison.Ordinal);
     }
 
     [Fact]
