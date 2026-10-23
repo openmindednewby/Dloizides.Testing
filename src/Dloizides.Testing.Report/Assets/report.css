@@ -173,4 +173,4 @@ a.tid{color:var(--accent)}
 .bytask ul{margin:0;padding:0 12px 12px 28px}
 .bytask li{padding:4px 0;overflow-wrap:anywhere}
 .bytask li a{color:var(--ink)}
-@media (max-width:720px){.tools{padding:6px 0}.tools>select,.tools>.combo,.tools>button{flex:1 1 calc(50% - 6px);max-width:none}#q{flex:1 1 100%}}
+@media (max-width:720px){.tools{position:static;padding:6px 0}.tools>select,.tools>.combo,.tools>button{flex:1 1 calc(50% - 6px);max-width:none}#q{flex:1 1 100%}}

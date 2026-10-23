@@ -4,7 +4,7 @@ namespace Dloizides.Testing.Report.Tests;
 
 [MethodUnderTest("TB1", "Shows a short search placeholder that fits the box while the hidden label keeps the full wording.")]
 [MethodUnderTest("TB2", "Keeps a gap between an area or class title and its kind tag.")]
-[MethodUnderTest("TB3", "Keeps the toolbar stuck to the top on a phone, with the controls two to a row.")]
+[MethodUnderTest("TB3", "Lets the toolbar scroll away on a phone, with the controls two to a row, and keeps it stuck to the top on desktop.")]
 [MethodUnderTest("TB4", "Lets every toolbar control fit one row at desktop width by capping the selects and search boxes.")]
 [MethodUnderTest("TB5", "Keeps a gap between each legend mark and its words.")]
 public class ToolbarLayoutTests
@@ -30,11 +30,11 @@ public class ToolbarLayoutTests
     }
 
     [Fact]
-    public void TB3_WhenPhoneWidth_KeepsToolbarSticky()
+    public void TB3_WhenPhoneWidth_ToolbarScrollsAwayButStaysPinnedOnDesktop()
     {
-        const string twoUp = "@media (max-width:720px){.tools{padding:6px 0}.tools>select,.tools>.combo,.tools>button{flex:1 1 calc(50% - 6px);max-width:none}#q{flex:1 1 100%}}";
+        const string twoUp = "@media (max-width:720px){.tools{position:static;padding:6px 0}.tools>select,.tools>.combo,.tools>button{flex:1 1 calc(50% - 6px);max-width:none}#q{flex:1 1 100%}}";
 
-        Assert.DoesNotContain(".tools{position:static}", Assets.Css, Ordinal);
+        Assert.Contains(".tools{position:sticky;top:0;", Assets.Css, Ordinal);
         Assert.Contains(twoUp, Assets.Css, Ordinal);
     }
 
