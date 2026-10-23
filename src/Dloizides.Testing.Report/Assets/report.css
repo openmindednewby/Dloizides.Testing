@@ -46,8 +46,8 @@ h2{font:600 1.3rem/1.2 var(--f-d);margin:2rem 0 .75rem}
 .diagram figcaption{color:var(--muted);font-size:.85rem;margin-top:8px;overflow-wrap:anywhere}
 .diagram figcaption a{display:inline-flex;align-items:center;min-height:44px}
 .tools{position:sticky;top:0;z-index:3;background:var(--bg);padding:10px 0;display:flex;gap:8px 10px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--line);margin-top:16px}
-.tools input{flex:1 1 16rem;min-width:0;min-height:44px;font:inherit;padding:0 12px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
-.combo{position:relative;flex:1 1 12rem;min-width:0;display:flex}
+.tools input{flex:1 1 10rem;min-width:0;min-height:44px;font:inherit;padding:0 12px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.combo{position:relative;flex:1 1 10rem;min-width:0;display:flex}
 .combo ul{position:absolute;top:100%;left:0;right:0;z-index:4;margin:2px 0 0;padding:4px 0;list-style:none;max-height:min(50vh,320px);overflow:auto;background:var(--surface);border:1px solid var(--line);box-shadow:0 6px 18px color-mix(in srgb,var(--ink) 18%,transparent)}
 .combo li{display:flex;align-items:center;min-height:44px;padding:0 12px;cursor:pointer;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .combo li.act,.combo li:hover{background:var(--tint);box-shadow:inset 3px 0 0 var(--accent)}
@@ -62,6 +62,7 @@ h2{font:600 1.3rem/1.2 var(--f-d);margin:2rem 0 .75rem}
 .tools output{color:var(--muted);font-size:.9rem;font-variant-numeric:tabular-nums;flex:1 1 100%}
 .none{flex:1 1 100%;margin:0;color:var(--fail)}
 .legend{display:flex;flex-wrap:wrap;gap:4px 14px;color:var(--muted);font-size:.85rem;margin:8px 0 0}
+.legend>span{display:inline-flex;align-items:center;gap:6px}
 .shell{display:grid;grid-template-columns:15rem minmax(0,1fr);gap:24px;margin-top:16px;align-items:start}
 nav.areas{position:sticky;top:132px}
 nav.areas h2{font:600 .78rem var(--f-b);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
@@ -83,6 +84,7 @@ details[open]>summary>.tw{transform:rotate(45deg)}
 .pass{--c:var(--pass)}.fail,.xpass{--c:var(--fail)}.xfail{--c:var(--xfail)}.skip{--c:var(--skip)}
 .type{font:600 .72rem var(--f-b);letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border:1px solid currentColor;color:var(--accent);white-space:nowrap}
 .kind{font:600 .72rem var(--f-b);letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border:1px solid currentColor;color:var(--accent);white-space:nowrap}
+.gname .kind{margin-left:8px}
 .gpath{flex:1 0 100%;order:9;font:400 .82rem var(--f-m);color:var(--muted);overflow-wrap:anywhere;min-width:0}
 .whycard{border:1px solid var(--line);background:var(--bg);padding:10px 12px}
 .whycard dl{margin:0;display:grid;grid-template-columns:minmax(4.5rem,auto) 1fr;gap:6px 12px}
@@ -148,7 +150,6 @@ nav.areas a{border:1px solid var(--line)}
 }
 @media (max-width:720px){
 h1{font-size:1.55rem}
-.tools{position:static}
 .set{grid-template-columns:1fr}.set-name{grid-row:auto}.files,.set-label{grid-column:auto}
 .chips{margin-left:0;flex:1 1 100%}
 .feeds{margin-left:0}
@@ -161,7 +162,7 @@ td.r,td.num{display:inline-block;text-align:left}
 td[data-l]::before{content:attr(data-l);display:block;font-size:.72rem;color:var(--muted)}
 td.num::before{display:none}
 }
-.tools select{min-height:44px;max-width:100%;flex:0 1 auto;font:inherit;padding:0 8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.tools select{min-height:44px;min-width:0;max-width:13rem;flex:0 1 auto;font:inherit;padding:0 8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
 .shell[hidden],.bytask[hidden]{display:none}
 .tasks{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
 .tid{display:inline-flex;align-items:center;min-height:24px;padding:0 6px;border:1px solid var(--line);font-size:.8rem;font-variant-numeric:tabular-nums;color:var(--ink);background:var(--bg);overflow-wrap:anywhere}
@@ -172,3 +173,4 @@ a.tid{color:var(--accent)}
 .bytask ul{margin:0;padding:0 12px 12px 28px}
 .bytask li{padding:4px 0;overflow-wrap:anywhere}
 .bytask li a{color:var(--ink)}
+@media (max-width:720px){.tools{padding:6px 0}.tools>select,.tools>.combo,.tools>button{flex:1 1 calc(50% - 6px);max-width:none}#q{flex:1 1 100%}}

@@ -23,8 +23,8 @@ internal static class RunSections
         var areas = tests.GroupBy(t => t.Feature, StringComparer.Ordinal).OrderBy(g => g.Min(t => (int)t.Status)).ThenBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
             .Select(g => g.Key).Select(f => Option(f, FeatureTitle.Find(features, f)?.Name ?? FeatureTitle.Words(f)));
         var ids = TaskIds(tests, tasks);
-        var builder = new StringBuilder("<div class=\"tools\" role=\"search\"><label class=\"sr\" for=\"q\">Search tests</label>")
-            .Append("<input id=\"q\" type=\"search\" placeholder=\"Search tests or tasks\" autocomplete=\"off\">")
+        var builder = new StringBuilder("<div class=\"tools\" role=\"search\"><label class=\"sr\" for=\"q\">Search tests or tasks</label>")
+            .Append("<input id=\"q\" type=\"search\" placeholder=\"Search tests\" autocomplete=\"off\">")
             .Append(Select("fo", "Outcome", "Every outcome", outcomes))
             .Append(Select("ff", "Area", "Every area", areas));
         if (ids.Count > 0)
