@@ -2,22 +2,28 @@ using System.Text;
 
 namespace Dloizides.Testing.Report;
 
+internal sealed record PageParts(SetLabels Labels, RunDiagrams Diagrams, TaskLinks Tasks);
+
 internal sealed class RunPage
 {
     private const string TestsSuffix = "Tests";
 
     private readonly SetLabels labels;
     private readonly RunDiagrams diagrams;
+    private readonly TaskLinks tasks;
 
-    private RunPage(SetLabels labels, RunDiagrams diagrams)
+    private RunPage(PageParts parts)
     {
-        this.labels = labels;
-        this.diagrams = diagrams;
+        labels = parts.Labels;
+        diagrams = parts.Diagrams;
+        tasks = parts.Tasks;
     }
 
     public static string Render(TestRun run, string title, SetLabels labels) => Render(run, title, labels, RunDiagrams.None);
 
-    public static string Render(TestRun run, string title, SetLabels labels, RunDiagrams diagrams) => new RunPage(labels, diagrams).Build(run, title);
+    public static string Render(TestRun run, string title, SetLabels labels, RunDiagrams diagrams) => Render(run, title, new PageParts(labels, diagrams, TaskLinks.None));
+
+    public static string Render(TestRun run, string title, PageParts parts) => new RunPage(parts).Build(run, title);
 
     private static string E(string text) => Html.Encode(text);
 
@@ -26,7 +32,7 @@ internal sealed class RunPage
         var tests = run.Sets.SelectMany(s => s.Tests).ToList();
         var multiProject = tests.Select(t => t.Project).Distinct(StringComparer.Ordinal).Count() > 1;
         var things = ThingIds.For(tests);
-        var tree = new RunTree(diagrams, things, run.Features);
+        var tree = new RunTree(diagrams, things, run.Features, tasks);
         var treeHtml = tree.Render(tests, multiProject);
         var body = new StringBuilder("<a class=\"back\" href=\"../index.html\">All test runs</a>");
         body.Append($"<h1>{E(title)}</h1>");
@@ -40,9 +46,10 @@ internal sealed class RunPage
         body.Append(RunSections.Diagrams(diagrams, things.Of));
         if (tree.TestCount > 0)
         {
-            body.Append(RunSections.Toolbar)
+            body.Append(RunSections.Toolbar(tests, run.Features, tasks))
                 .Append("<div class=\"shell\"><nav class=\"areas\" aria-label=\"Business areas\"><h2>Areas</h2><ul>")
-                .Append(tree.Nav).Append("</ul></nav><main id=\"tree\">").Append(treeHtml).Append("</main></div>");
+                .Append(tree.Nav).Append("</ul></nav><main id=\"tree\">").Append(treeHtml).Append("</main></div>")
+                .Append(RunSections.ByTask(tests, tasks, tree.IdOf));
         }
 
         var tail = diagrams.Any ? RunDiagrams.MermaidScript : string.Empty;

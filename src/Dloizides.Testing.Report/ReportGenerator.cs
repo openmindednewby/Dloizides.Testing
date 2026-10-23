@@ -22,7 +22,7 @@ internal static class ReportGenerator
         var runIndex = Path.Combine(runPath, "index.html");
         var diagrams = RunDiagrams.Build(run, options.EfSnapshot is { } snapshot ? File.ReadAllText(snapshot) : null);
         diagrams.WriteFiles(runPath, Utf8NoBom);
-        File.WriteAllText(runIndex, RunPage.Render(run, options.RunTitle, options.Labels, diagrams), Utf8NoBom);
+        File.WriteAllText(runIndex, RunPage.Render(run, options.RunTitle, new PageParts(options.Labels, diagrams, options.Tasks)), Utf8NoBom);
 
         var runs = Directory.GetDirectories(reports)
             .Where(d => RunDates.Parse(Path.GetFileName(d)) is not null && File.Exists(Path.Combine(d, "index.html")))

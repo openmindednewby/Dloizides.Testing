@@ -1,11 +1,12 @@
 namespace Dloizides.Testing.Report;
 
-internal sealed class RunRows
+internal sealed class RunRows(TaskLinks tasks)
 {
     private const string NotBuiltYet = "Not built yet";
     private const int SummaryMessageLength = 240;
 
     private readonly List<(string Id, string Name)> problems = [];
+    private readonly Dictionary<TestResult, string> ids = new(ReferenceEqualityComparer.Instance);
 
     public IReadOnlyList<(string Id, string Name)> Problems => problems;
 
@@ -13,18 +14,22 @@ internal sealed class RunRows
 
     private static string E(string text) => Html.Encode(text);
 
+    public string IdOf(TestResult test) => ids.GetValueOrDefault(test, string.Empty);
+
     public string Row(TestResult test)
     {
         Count++;
         var id = $"t-{Count}";
+        ids[test] = id;
+        var taskIds = tasks.Of(test);
         if (test.Status is TestStatus.Fail or TestStatus.XPass)
             problems.Add((id, test.Name));
         var search = E(SearchText.Build(test));
         var args = test.Args.Length > 0 ? $"<code class=\"args\">{E(test.Args)}</code>" : string.Empty;
         var scenario = test.Scenario.Length > 0 ? E(test.Scenario) : "<span class=\"empty\">any input</span>";
         var css = StatusText.Css(test.Status);
-        return $"<tbody class=\"t st-{css}\" id=\"{id}\" data-s=\"{search}\"><tr>"
-            + $"<td data-l=\"Scenario\" title=\"{E(test.Name)}\">{scenario}{args}{Reason(test)}</td><td data-l=\"Expected\">{E(test.Expected)}</td>"
+        return $"<tbody class=\"t st-{css}\" id=\"{id}\" data-s=\"{search}\" data-o=\"{css}\" data-f=\"{E(test.Feature)}\" data-k=\"{E(string.Join(' ', taskIds))}\"><tr>"
+            + $"<td data-l=\"Scenario\" title=\"{E(test.Name)}\">{scenario}{args}{tasks.Chips(taskIds)}{Reason(test)}</td><td data-l=\"Expected\">{E(test.Expected)}</td>"
             + $"<td class=\"r\"><span class=\"pill {css}\"><span class=\"sw {css}\"></span>{StatusText.Label(test.Status)}</span></td>"
             + $"<td class=\"num\" data-l=\"Time\">{Html.Duration(test.Seconds)}</td></tr>{Note(test)}</tbody>";
     }

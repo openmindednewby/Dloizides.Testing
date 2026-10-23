@@ -11,13 +11,62 @@ internal sealed record FigureSpec(string Caption, string Mermaid, string FileNam
 
 internal static class RunSections
 {
-    public const string Toolbar =
-        "<div class=\"tools\" role=\"search\"><label class=\"sr\" for=\"q\">Search tests</label>"
-        + "<input id=\"q\" type=\"search\" placeholder=\"Search scenario, method, class or reason\" autocomplete=\"off\">"
-        + "<button type=\"button\" id=\"openAll\">Expand all</button><button type=\"button\" id=\"closeAll\">Collapse all</button>"
-        + "<output id=\"qn\" for=\"q\" aria-live=\"polite\"></output><p id=\"qz\" class=\"none\" hidden></p></div>"
-        + "<p class=\"legend\"><span><span class=\"dot red\"></span> failed or passed early</span>"
+    private const string Legend =
+        "<p class=\"legend\"><span><span class=\"dot red\"></span> failed or passed early</span>"
         + "<span><span class=\"dot amber\"></span> skipped, needs a look</span><span><span class=\"sw xfail\"></span> expected red</span></p>";
+
+    private const string NoTask = "-";
+
+    public static string Toolbar(IReadOnlyList<TestResult> tests, IReadOnlyList<ResultsFeature> features, TaskLinks tasks)
+    {
+        var outcomes = tests.Select(t => t.Status).Distinct().Order().Select(s => Option(StatusText.Css(s), StatusText.Label(s)));
+        var areas = tests.GroupBy(t => t.Feature, StringComparer.Ordinal).OrderBy(g => g.Min(t => (int)t.Status)).ThenBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.Key).Select(f => Option(f, FeatureTitle.Find(features, f)?.Name ?? FeatureTitle.Words(f)));
+        var ids = TaskIds(tests, tasks);
+        var builder = new StringBuilder("<div class=\"tools\" role=\"search\"><label class=\"sr\" for=\"q\">Search tests</label>")
+            .Append("<input id=\"q\" type=\"search\" placeholder=\"Search scenario, method, class, reason or task\" autocomplete=\"off\">")
+            .Append(Select("fo", "Outcome", "Every outcome", outcomes))
+            .Append(Select("ff", "Area", "Every area", areas));
+        if (ids.Count > 0)
+        {
+            var untagged = tests.Any(t => tasks.Of(t).Count == 0) ? Option(NoTask, "No task") : string.Empty;
+            builder.Append(Select("fk", "Task", "Every task", ids.Select(i => Option(i, i)).Append(untagged)))
+                .Append("<label class=\"sr\" for=\"gb\">Group by</label><select id=\"gb\"><option value=\"area\">Group by area</option><option value=\"task\">Group by task</option></select>");
+        }
+
+        return builder.Append("<button type=\"button\" id=\"openAll\">Expand all</button><button type=\"button\" id=\"closeAll\">Collapse all</button>")
+            .Append("<output id=\"qn\" for=\"q\" aria-live=\"polite\"></output><p id=\"qz\" class=\"none\" hidden></p></div>")
+            .Append(Legend).ToString();
+    }
+
+    public static IReadOnlyList<string> TaskIds(IEnumerable<TestResult> tests, TaskLinks tasks) =>
+        tests.SelectMany(tasks.Of).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
+
+    public static string ByTask(IReadOnlyList<TestResult> tests, TaskLinks tasks, Func<TestResult, string> idOf)
+    {
+        var groups = tests.SelectMany(t => tasks.Of(t).Select(k => (Task: k, Test: t)))
+            .GroupBy(p => p.Task, p => p.Test, StringComparer.Ordinal).OrderBy(g => g.Key, StringComparer.Ordinal).ToList();
+        if (groups.Count == 0)
+            return string.Empty;
+        var builder = new StringBuilder("<section id=\"bytask\" class=\"bytask\" aria-labelledby=\"bytask-h\" hidden><h2 id=\"bytask-h\">Tests by task</h2>");
+        foreach (var group in groups)
+        {
+            var list = group.ToList();
+            builder.Append($"<details class=\"task\" data-k=\"{E(group.Key)}\"><summary>{tasks.Link(group.Key, "tid")}<span class=\"n\">{list.Count} tests</span>{Badges.Chips(new Tally(list))}</summary><ul>")
+                .Append(string.Concat(list.Select(t => $"<li><a href=\"#{idOf(t)}\">{E(FeatureTitle.Words(t.Feature))} · {E(t.Class)} · {E(t.Scenario.Length > 0 ? t.Scenario : t.Method)}</a></li>")))
+                .Append("</ul></details>");
+        }
+
+        var untagged = tests.Count(t => tasks.Of(t).Count == 0);
+        if (untagged > 0)
+            builder.Append($"<p class=\"when\">{untagged} tests name no task.</p>");
+        return builder.Append("</section>").ToString();
+    }
+
+    private static string Option(string value, string label) => $"<option value=\"{E(value)}\">{E(label)}</option>";
+
+    private static string Select(string id, string label, string all, IEnumerable<string> options) =>
+        $"<label class=\"sr\" for=\"{id}\">{label}</label><select id=\"{id}\"><option value=\"\">{all}</option>{string.Concat(options)}</select>";
 
     private static string E(string text) => Html.Encode(text);
 

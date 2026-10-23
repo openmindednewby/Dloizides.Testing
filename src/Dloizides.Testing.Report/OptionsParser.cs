@@ -8,8 +8,12 @@ internal sealed record ReportOptions(
     string Name,
     IReadOnlyDictionary<string, string>? SetLabelOverrides = null,
     string? ResultsFile = null,
-    string? EfSnapshot = null)
+    string? EfSnapshot = null,
+    string? TaskPattern = null,
+    string? TaskUrl = null)
 {
+    public TaskLinks Tasks => TaskPattern is null ? TaskLinks.None : TaskLinks.Create(TaskPattern, TaskUrl ?? string.Empty);
+
     public SetLabels Labels => new(SetLabelOverrides ?? new Dictionary<string, string>());
 
     public string RunTitle => Name.Length > 0 ? $"{Name} tests" : "Tests";
@@ -22,7 +26,7 @@ internal sealed record ParseResult(ReportOptions? Options, string Error, bool Is
 internal static class OptionsParser
 {
     public const string Usage =
-        "Usage: test-report <run-folder> [--source <dir>]... [--expected-red <set>[,<set>...]]... [--set-order <set>[,<set>...]] [--name <product>] [--set-label <Set>=<sentence>]... [--results <testdoc-results.v1.json>] [--ef-snapshot <ModelSnapshot.cs>]";
+        "Usage: test-report <run-folder> [--source <dir>]... [--expected-red <set>[,<set>...]]... [--set-order <set>[,<set>...]] [--name <product>] [--set-label <Set>=<sentence>]... [--results <testdoc-results.v1.json>] [--ef-snapshot <ModelSnapshot.cs>] [--task-pattern <regex>] [--task-url <url with {id}>]";
 
     public static ParseResult Parse(IReadOnlyList<string> args)
     {
@@ -33,6 +37,8 @@ internal static class OptionsParser
         var name = string.Empty;
         string? results = null;
         string? snapshot = null;
+        string? taskPattern = null;
+        string? taskUrl = null;
         var labels = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         for (var i = 0; i < args.Count; i++)
         {
@@ -58,6 +64,9 @@ internal static class OptionsParser
                 case "--name": name = value.Trim(); break;
                 case "--results": results = Path.GetFullPath(value); break;
                 case "--ef-snapshot": snapshot = Path.GetFullPath(value); break;
+                case "--task-url": taskUrl = value; break;
+                case "--task-pattern" when !TaskLinks.IsValidPattern(value): return Fail($"--task-pattern \"{value}\" is not a valid regular expression.");
+                case "--task-pattern": taskPattern = value; break;
                 case "--set-label":
                     var eq = value.IndexOf('=', StringComparison.Ordinal);
                     if (eq <= 0)
@@ -70,7 +79,7 @@ internal static class OptionsParser
 
         if (runFolder is null)
             return Fail("Missing <run-folder>.");
-        var options = new ReportOptions(Path.GetFullPath(runFolder), sources, expectedRed, setOrder, name, labels, results, snapshot);
+        var options = new ReportOptions(Path.GetFullPath(runFolder), sources, expectedRed, setOrder, name, labels, results, snapshot, taskPattern, taskUrl);
         return new ParseResult(options, string.Empty, false);
     }
 

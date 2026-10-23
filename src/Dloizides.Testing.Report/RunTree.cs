@@ -17,7 +17,7 @@ internal sealed record Fold(string Kind, string? Id, Tally? Status)
     public string Lead { get; init; } = string.Empty;
 }
 
-internal sealed class RunTree(RunDiagrams diagrams, ThingIds things, IReadOnlyList<ResultsFeature> features)
+internal sealed class RunTree(RunDiagrams diagrams, ThingIds things, IReadOnlyList<ResultsFeature> features, TaskLinks? tasks = null)
 {
     private const string TableHead =
         "<colgroup><col class=\"c1\"><col class=\"c2\"><col class=\"c3\"><col class=\"c4\"></colgroup>"
@@ -29,7 +29,7 @@ internal sealed class RunTree(RunDiagrams diagrams, ThingIds things, IReadOnlyLi
 
     private static readonly StringComparer Ordering = StringComparer.OrdinalIgnoreCase;
 
-    private readonly RunRows rows = new();
+    private readonly RunRows rows = new(tasks ?? TaskLinks.None);
     private readonly StringBuilder nav = new();
     private int areaCounter;
 
@@ -38,6 +38,8 @@ internal sealed class RunTree(RunDiagrams diagrams, ThingIds things, IReadOnlyLi
     public int TestCount => rows.Count;
 
     public string Nav => nav.ToString();
+
+    public string IdOf(TestResult test) => rows.IdOf(test);
 
     private static string E(string text) => Html.Encode(text);
 
