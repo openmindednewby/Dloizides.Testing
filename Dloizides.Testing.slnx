@@ -1,10 +1,12 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Dloizides.Testing/Dloizides.Testing.csproj" />
+    <Project Path="src/Dloizides.Testing.AspNetCore/Dloizides.Testing.AspNetCore.csproj" />
     <Project Path="src/Dloizides.Testing.Postgres/Dloizides.Testing.Postgres.csproj" />
     <Project Path="src/Dloizides.Testing.Report/Dloizides.Testing.Report.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Dloizides.Testing.AspNetCore.Tests/Dloizides.Testing.AspNetCore.Tests.csproj" />
     <Project Path="tests/Dloizides.Testing.Postgres.Tests/Dloizides.Testing.Postgres.Tests.csproj" />
     <Project Path="tests/Dloizides.Testing.Report.Tests/Dloizides.Testing.Report.Tests.csproj" />
     <Project Path="tests/Dloizides.Testing.Tests/Dloizides.Testing.Tests.csproj" />

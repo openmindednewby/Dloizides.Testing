@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework></TargetFramework>
+    <TargetFrameworks>net10.0</TargetFrameworks>
+    <RootNamespace>Dloizides.Testing.AspNetCore</RootNamespace>
+    <PackageId>Dloizides.Testing.AspNetCore</PackageId>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageTags>testing;aspnetcore;testserver;management-port;saas</PackageTags>
+    <Description>A probe pack for ASP.NET Core test hosts (MGMT-PORT-1): /metrics and /health/* answer 404 on the public port and 200 on the management port.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="10.0.0" />
+  </ItemGroup>
+
+</Project>
