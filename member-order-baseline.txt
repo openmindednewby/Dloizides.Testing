@@ -1,0 +1,11 @@
+src/Dloizides.Testing.Report/AreaSections.cs 1
+src/Dloizides.Testing.Report/Diagrams/MermaidText.cs 1
+src/Dloizides.Testing.Report/Diagrams/RunDiagrams.cs 3
+src/Dloizides.Testing.Report/Diagrams/SchemaDiagram.cs 4
+src/Dloizides.Testing.Report/ResultsJsonReader.cs 3
+src/Dloizides.Testing.Report/RunRows.cs 2
+src/Dloizides.Testing.Report/RunSections.cs 6
+src/Dloizides.Testing.Report/RunTree.cs 1
+src/Dloizides.Testing.Report/SearchText.cs 1
+src/Dloizides.Testing.Report/TaskLinks.cs 1
+src/Dloizides.Testing/TestDiscovery.cs 1
