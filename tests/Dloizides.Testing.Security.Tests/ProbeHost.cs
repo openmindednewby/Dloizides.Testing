@@ -26,10 +26,13 @@ internal sealed class ProbeHost : IAsyncDisposable
 
     private readonly FakeIssuer _issuer;
 
-    private ProbeHost(WebApplication app, FakeIssuer issuer, X509Certificate2 certificate)
+    private readonly long _bodyLimit;
+
+    private ProbeHost(WebApplication app, FakeIssuer issuer, X509Certificate2 certificate, long bodyLimit)
     {
         _app = app;
         _issuer = issuer;
+        _bodyLimit = bodyLimit;
         var address = app.Services.GetRequiredService<IServer>().Features
             .GetRequiredFeature<IServerAddressesFeature>().Addresses.First();
         var trust = new X509ChainPolicy { TrustMode = X509ChainTrustMode.CustomRootTrust };
@@ -51,7 +54,7 @@ internal sealed class ProbeHost : IAsyncDisposable
         ProtectedPath = ItemsPath,
         ThrowingPath = FailPath,
         BodyPath = ItemsPath,
-        MaxRequestBodyBytes = BodyLimit,
+        MaxRequestBodyBytes = _bodyLimit,
         CrossTenantPaths = [OtherTenantPath],
     };
 
@@ -67,10 +70,10 @@ internal sealed class ProbeHost : IAsyncDisposable
         app.UseCors();
         MapEndpoints(app, Results.Ok("another tenant's item"));
         app.MapGet("/metrics", () => "probe_metric 1");
-        return await StartAsync(app, issuer, certificate);
+        return await StartAsync(app, issuer, certificate, BodyLimit);
     }
 
-    public static async Task<ProbeHost> StartServiceDefaultsAsync()
+    public static async Task<ProbeHost> StartServiceDefaultsAsync(long bodyLimit = BodyLimit)
     {
         var issuer = await FakeIssuer.StartAsync();
         var certificate = CreateCertificate();
@@ -87,13 +90,13 @@ internal sealed class ProbeHost : IAsyncDisposable
         builder.AddDloizidesServiceDefaults(options =>
         {
             options.ServiceName = "security-probe-tests";
-            options.MaxRequestBodyBytes = BodyLimit;
+            options.MaxRequestBodyBytes = bodyLimit;
             options.Secrets.None("probe test host holds no secrets");
         });
         var app = builder.Build();
         app.UseDloizidesServiceDefaults();
         MapEndpoints(app, Results.NotFound());
-        return await StartAsync(app, issuer, certificate);
+        return await StartAsync(app, issuer, certificate, bodyLimit);
     }
 
     public async ValueTask DisposeAsync()
@@ -122,10 +125,10 @@ internal sealed class ProbeHost : IAsyncDisposable
         app.MapGet(OtherTenantPath, () => otherTenantItem);
     }
 
-    private static async Task<ProbeHost> StartAsync(WebApplication app, FakeIssuer issuer, X509Certificate2 certificate)
+    private static async Task<ProbeHost> StartAsync(WebApplication app, FakeIssuer issuer, X509Certificate2 certificate, long bodyLimit)
     {
         await app.StartAsync(CancellationToken.None);
-        return new ProbeHost(app, issuer, certificate);
+        return new ProbeHost(app, issuer, certificate, bodyLimit);
     }
 
     private static X509Certificate2 CreateCertificate()

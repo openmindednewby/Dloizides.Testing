@@ -17,6 +17,7 @@ internal static class ResourceLimitProbes
         var size = target.MaxRequestBodyBytes + 1;
         var description = $"POST {path} with {size.ToString(CultureInfo.InvariantCulture)} bytes";
         var request = new HttpRequestMessage(HttpMethod.Post, path) { Content = new ByteArrayContent(new byte[size]) };
+        request.Headers.ExpectContinue = true;
         try
         {
             using var response = await target.SendAsync(request, target.ValidToken(), cancellationToken);

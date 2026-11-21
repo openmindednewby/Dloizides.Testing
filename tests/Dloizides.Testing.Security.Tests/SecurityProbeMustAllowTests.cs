@@ -15,6 +15,17 @@ public sealed class SecurityProbeMustAllowTests
     }
 
     [Fact]
+    public async Task FindFailuresAsync_WithLargeBodyLimit_ReadsThe413()
+    {
+        const long largeLimit = 26L * 1024 * 1024;
+        await using var host = await ProbeHost.StartServiceDefaultsAsync(largeLimit);
+
+        var failures = await SecurityProbe.FindFailuresAsync(host.Target);
+
+        failures.Select(failure => failure.ToString()).ShouldBeEmpty();
+    }
+
+    [Fact]
     public async Task EnsureSecureAsync_WithLeakyHost_ThrowsNamingFailedProbe()
     {
         await using var host = await ProbeHost.StartLeakyAsync();

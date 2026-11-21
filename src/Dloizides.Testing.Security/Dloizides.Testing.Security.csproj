@@ -5,9 +5,9 @@
     <TargetFrameworks>net10.0</TargetFrameworks>
     <RootNamespace>Dloizides.Testing.Security</RootNamespace>
     <PackageId>Dloizides.Testing.Security</PackageId>
-    <Version>0.1.0</Version>
-    <AssemblyVersion>0.1.0.0</AssemblyVersion>
-    <FileVersion>0.1.0.0</FileVersion>
+    <Version>0.1.1</Version>
+    <AssemblyVersion>0.1.1.0</AssemblyVersion>
+    <FileVersion>0.1.1.0</FileVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageTags>testing;aspnetcore;security;owasp;probe;saas</PackageTags>
     <Description>A security probe pack for ASP.NET Core services: bad tokens and unmarked endpoints answer 401, errors carry no detail, security headers and HSTS are present, body and rate limits hold, unknown origins get no CORS header, /metrics is not public.</Description>
