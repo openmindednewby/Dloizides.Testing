@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Dloizides.Testing.Security/Dloizides.Testing.Security.csproj" />
     <Project Path="src/Dloizides.Testing/Dloizides.Testing.csproj" />
     <Project Path="src/Dloizides.Testing.AspNetCore/Dloizides.Testing.AspNetCore.csproj" />
     <Project Path="src/Dloizides.Testing.Postgres/Dloizides.Testing.Postgres.csproj" />
@@ -10,6 +11,7 @@
     <Project Path="tests/Dloizides.Testing.Postgres.Tests/Dloizides.Testing.Postgres.Tests.csproj" />
     <Project Path="tests/Dloizides.Testing.Report.Tests/Dloizides.Testing.Report.Tests.csproj" />
     <Project Path="tests/Dloizides.Testing.Tests/Dloizides.Testing.Tests.csproj" />
+    <Project Path="tests/Dloizides.Testing.Security.Tests/Dloizides.Testing.Security.Tests.csproj" />
     <Project Path="tests/Dloizides.Testing.Tests.Samples/Dloizides.Testing.Tests.Samples.csproj" />
   </Folder>
 </Solution>

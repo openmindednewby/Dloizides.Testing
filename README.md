@@ -156,6 +156,29 @@ $env:TESTDOC_CALLS_DIR = "reports/20261007-100000/calls"
 dotnet test --results-directory reports/20261007-100000/Unit-Shop.Tests --logger "trx;LogFileName=results.trx"
 ```
 
+## Security probe pack (`Dloizides.Testing.Security`)
+
+Runs the security floor against a running service over HTTPS and lists every missing control:
+forged, expired, wrong-audience and `alg: none` tokens get 401; an endpoint without `AllowAnonymous` gets 401;
+a forced exception returns ProblemDetails with no stack trace or message; nosniff, CSP with `frame-ancestors 'none'`,
+Referrer-Policy, Permissions-Policy and HSTS are present; an oversized body gets 413; a burst gets a 429;
+an unknown origin gets no CORS header; `/metrics` gets 404; each cross-tenant path you pass gets 404.
+
+```csharp
+await SecurityProbe.EnsureSecureAsync(new SecurityProbeTarget
+{
+    Client = httpsClient,
+    Audience = audience,
+    CreateToken = (aud, expires) => issuer.CreateToken(aud, expires),
+    ProtectedPath = "/items",
+    ThrowingPath = "/items/fail",
+    BodyPath = "/items",
+    CrossTenantPaths = [$"/items/{otherTenantItemId}"],
+}, cancellationToken);
+```
+
+The throwing endpoint throws with `SecurityProbe.ForcedExceptionMessage`. The burst runs last.
+
 ## License
 
 MIT
