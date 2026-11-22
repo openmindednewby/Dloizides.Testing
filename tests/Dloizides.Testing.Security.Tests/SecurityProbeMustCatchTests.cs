@@ -33,11 +33,23 @@ public sealed class SecurityProbeMustCatchTests : IClassFixture<LeakyHostFailure
     }
 
     [Fact]
-    public void FindFailuresAsync_WithoutTenantFilter_ReportsCrossTenantRead()
+    public void FindFailuresAsync_WithoutTenantFilter_ReportsEveryCrossTenantRequest()
     {
         var failures = _leaky.Of(SecurityProbeKind.CrossTenant);
 
-        failures.ShouldBe(["GET /tenants/other/items/1 with a valid token => 200"]);
+        failures.ShouldBe([
+            "GET /tenants/other/items/1 with a valid token => 200",
+            "PATCH /tenants/other/items/1 with a valid token => 204",
+            "DELETE /tenants/other/items/1 with a valid token => 200",
+        ]);
+    }
+
+    [Fact]
+    public void FindFailuresAsync_WithoutTenantFilter_ExpectsForbiddenOrNotFound()
+    {
+        var expected = _leaky.ExpectedOf(SecurityProbeKind.CrossTenant);
+
+        expected.ShouldBe(["403 or 404", "403 or 404", "403 or 404"]);
     }
 
     [Fact]

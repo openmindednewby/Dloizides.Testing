@@ -45,6 +45,6 @@ public sealed class SecurityProbeTarget
     /// <summary>An origin the service does not allow.</summary>
     public string UnknownOrigin { get; init; } = DefaultUnknownOrigin;
 
-    /// <summary>Paths to another tenant's records, requested with a valid token; each must answer 404.</summary>
-    public IReadOnlyList<string> CrossTenantPaths { get; init; } = [];
+    /// <summary>Requests to another tenant's records, sent with a valid token; each must answer 403 or 404.</summary>
+    public IReadOnlyList<CrossTenantRequest> CrossTenantRequests { get; init; } = [];
 }

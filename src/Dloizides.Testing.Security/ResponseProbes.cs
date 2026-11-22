@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Dloizides.Testing.Security;
@@ -8,6 +9,8 @@ internal static partial class ResponseProbes
     private const string ProblemJson = "application/problem+json";
     private const string AllowOriginHeader = "Access-Control-Allow-Origin";
     private const string Missing = "missing";
+    private const string JsonMediaType = "application/json";
+    private const string DeniedStatuses = "403 or 404";
 
     private static readonly RequiredHeader[] RequiredHeaders =
     [
@@ -95,14 +98,25 @@ internal static partial class ResponseProbes
     private static async Task<IEnumerable<SecurityProbeFailure>> CrossTenantAsync(SecurityProbeTarget target, CancellationToken cancellationToken)
     {
         var failures = new List<SecurityProbeFailure?>();
-        foreach (var path in target.CrossTenantPaths)
+        foreach (var entry in target.CrossTenantRequests)
         {
-            using var response = await target.GetAsync(path, target.ValidToken(), cancellationToken);
-            failures.Add(ProbeRequests.Expect(SecurityProbeKind.CrossTenant, $"GET {path} with a valid token", HttpStatusCode.NotFound, response));
+            using var response = await target.SendAsync(ToMessage(entry), target.ValidToken(), cancellationToken);
+            failures.Add(ExpectDenied($"{entry.Method.Method} {entry.Path} with a valid token", response));
         }
 
         return failures.OfType<SecurityProbeFailure>().ToList();
     }
+
+    private static HttpRequestMessage ToMessage(CrossTenantRequest entry) =>
+        new(entry.Method, entry.Path)
+        {
+            Content = entry.JsonBody is null ? null : new StringContent(entry.JsonBody, Encoding.UTF8, JsonMediaType),
+        };
+
+    private static SecurityProbeFailure? ExpectDenied(string request, HttpResponseMessage response) =>
+        response.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.NotFound
+            ? null
+            : new SecurityProbeFailure(SecurityProbeKind.CrossTenant, request, DeniedStatuses, ProbeRequests.StatusOf(response));
 
     private static bool HasHeader(HttpResponseMessage response, RequiredHeader header) =>
         (response.Headers.TryGetValues(header.Name, out var values)

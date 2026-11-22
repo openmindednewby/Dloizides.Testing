@@ -19,6 +19,7 @@ internal sealed class ProbeHost : IAsyncDisposable
     public const string ItemsPath = "/items";
     public const string FailPath = "/items/fail";
     public const string OtherTenantPath = "/tenants/other/items/1";
+    public const string OtherTenantPatchBody = "{\"name\":\"probe\"}";
     public const string Audience = "probe-tests-api";
     public const long BodyLimit = 4096;
 
@@ -55,7 +56,12 @@ internal sealed class ProbeHost : IAsyncDisposable
         ThrowingPath = FailPath,
         BodyPath = ItemsPath,
         MaxRequestBodyBytes = _bodyLimit,
-        CrossTenantPaths = [OtherTenantPath],
+        CrossTenantRequests =
+        [
+            new(HttpMethod.Get, OtherTenantPath),
+            new(HttpMethod.Patch, OtherTenantPath, OtherTenantPatchBody),
+            new(HttpMethod.Delete, OtherTenantPath),
+        ],
     };
 
     public static async Task<ProbeHost> StartLeakyAsync()
@@ -68,7 +74,7 @@ internal sealed class ProbeHost : IAsyncDisposable
         var app = builder.Build();
         app.UseDeveloperExceptionPage();
         app.UseCors();
-        MapEndpoints(app, Results.Ok("another tenant's item"));
+        MapEndpoints(app, Results.Ok("another tenant's item"), Results.NoContent(), Results.Ok());
         app.MapGet("/metrics", () => "probe_metric 1");
         return await StartAsync(app, issuer, certificate, BodyLimit);
     }
@@ -95,7 +101,7 @@ internal sealed class ProbeHost : IAsyncDisposable
         });
         var app = builder.Build();
         app.UseDloizidesServiceDefaults();
-        MapEndpoints(app, Results.NotFound());
+        MapEndpoints(app, Results.NotFound(), Results.StatusCode(StatusCodes.Status403Forbidden), Results.NotFound());
         return await StartAsync(app, issuer, certificate, bodyLimit);
     }
 
@@ -113,7 +119,7 @@ internal sealed class ProbeHost : IAsyncDisposable
         return builder;
     }
 
-    private static void MapEndpoints(WebApplication app, IResult otherTenantItem)
+    private static void MapEndpoints(WebApplication app, IResult otherTenantItem, IResult otherTenantUpdate, IResult otherTenantDelete)
     {
         app.MapGet(ItemsPath, () => "items");
         app.MapGet(FailPath, string () => throw new InvalidOperationException(SecurityProbe.ForcedExceptionMessage));
@@ -123,6 +129,12 @@ internal sealed class ProbeHost : IAsyncDisposable
             return Results.Ok();
         });
         app.MapGet(OtherTenantPath, () => otherTenantItem);
+        app.MapPatch(OtherTenantPath, async (HttpRequest request) =>
+        {
+            await request.Body.CopyToAsync(Stream.Null, request.HttpContext.RequestAborted);
+            return otherTenantUpdate;
+        });
+        app.MapDelete(OtherTenantPath, () => otherTenantDelete);
     }
 
     private static async Task<ProbeHost> StartAsync(WebApplication app, FakeIssuer issuer, X509Certificate2 certificate, long bodyLimit)

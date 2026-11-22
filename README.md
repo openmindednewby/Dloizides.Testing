@@ -162,7 +162,7 @@ Runs the security floor against a running service over HTTPS and lists every mis
 forged, expired, wrong-audience and `alg: none` tokens get 401; an endpoint without `AllowAnonymous` gets 401;
 a forced exception returns ProblemDetails with no stack trace or message; nosniff, CSP with `frame-ancestors 'none'`,
 Referrer-Policy, Permissions-Policy and HSTS are present; an oversized body gets 413; a burst gets a 429;
-an unknown origin gets no CORS header; `/metrics` gets 404; each cross-tenant path you pass gets 404.
+an unknown origin gets no CORS header; `/metrics` gets 404; each cross-tenant request you pass (method, path, optional JSON body) gets 403 or 404.
 
 ```csharp
 await SecurityProbe.EnsureSecureAsync(new SecurityProbeTarget
@@ -173,7 +173,7 @@ await SecurityProbe.EnsureSecureAsync(new SecurityProbeTarget
     ProtectedPath = "/items",
     ThrowingPath = "/items/fail",
     BodyPath = "/items",
-    CrossTenantPaths = [$"/items/{otherTenantItemId}"],
+    CrossTenantRequests = [new(HttpMethod.Patch, $"/items/{otherTenantItemId}", """{"name":"x"}""")],
 }, cancellationToken);
 ```
 
